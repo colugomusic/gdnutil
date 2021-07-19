@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #pragma warning(push, 0)
 #include <Engine.hpp>
 #include <Node.hpp>
@@ -7,6 +9,8 @@
 #include <SceneTree.hpp>
 #include <Viewport.hpp>
 #pragma warning(pop)
+
+#include "placeholder_control.hpp"
 
 namespace gdn {
 namespace tree {
@@ -45,6 +49,28 @@ template <class T>
 T* get(godot::NodePath path)
 {
 	return godot::Object::cast_to<T>(get(path));
+}
+
+template <class T>
+std::shared_ptr<Placeholder<T>> get_placeholder(godot::NodePath path)
+{
+	return std::make_shared<Placeholder<T>>(get<godot::InstancePlaceholder>(path));
+}
+
+template <class T>
+std::shared_ptr<PlaceholderControl<T>> get_placeholder_control(godot::NodePath path)
+{
+	return std::make_shared<PlaceholderControl<T>>(get<godot::InstancePlaceholder>(path));
+}
+
+inline std::shared_ptr<GenericPlaceholder> get_placeholder(godot::NodePath path)
+{
+	return std::make_shared<GenericPlaceholder>(get<godot::InstancePlaceholder>(path));
+}
+
+inline std::shared_ptr<GenericPlaceholderControl> get_placeholder_control(godot::NodePath path)
+{
+	return std::make_shared<GenericPlaceholderControl>(get<godot::InstancePlaceholder>(path));
 }
 
 template <class T>
