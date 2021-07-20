@@ -31,9 +31,19 @@ public:
 
 		const auto control = get<godot::Control>();
 
-		control->set_visible(yes);
+		if (control) control->set_visible(yes);
 
 		return instanced;
+	}
+
+	bool show()
+	{
+		return set_visible(true);
+	}
+
+	void hide()
+	{
+		set_visible(false);
 	}
 };
 
