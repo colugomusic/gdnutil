@@ -12,6 +12,11 @@ public:
 		: GenericPlaceholder(instance_placeholder)
 	{
 	}
+
+	bool is_visible() const
+	{
+		return is_instanced() && get<godot::Control>()->is_visible();
+	}
 	
 	bool set_visible(bool yes)
 	{

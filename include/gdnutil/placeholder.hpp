@@ -37,11 +37,6 @@ public:
 		return !get<godot::InstancePlaceholder>();
 	}
 
-	bool is_visible() const
-	{
-		return is_instanced() && get<godot::Control>()->is_visible();
-	}
-
 	template <class T> T* get() const
 	{
 		return godot::Object::cast_to<T>(node_);
