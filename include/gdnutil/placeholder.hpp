@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #pragma warning(push, 0)
 #include <Control.hpp>
 #include <Godot.hpp>
@@ -26,6 +28,9 @@ public:
 		if (placeholder)
 		{
 			placeholder->replace_by_instance();
+
+			if (on_instanced) on_instanced();
+
 			return true;
 		}
 
@@ -41,6 +46,8 @@ public:
 	{
 		return godot::Object::cast_to<T>(node_);
 	}
+
+	std::function<void()> on_instanced;
 
 private:
 
