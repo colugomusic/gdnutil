@@ -10,14 +10,20 @@
 #include <PackedScene.hpp>
 #pragma warning(pop)
 
+#include "tree.hpp"
+
 namespace gdn {
 
 class GenericPlaceholder
 {
 public:
 
-	GenericPlaceholder(godot::InstancePlaceholder* instance_placeholder)
-		: node_(instance_placeholder)
+	GenericPlaceholder() = default;
+
+	GenericPlaceholder(godot::Node* parent, godot::NodePath path)
+		: parent_(parent)
+		, path_(path)
+		, node_(tree::get<godot::InstancePlaceholder>(parent, path))
 	{
 	}
 	
@@ -28,6 +34,8 @@ public:
 		if (placeholder)
 		{
 			placeholder->replace_by_instance();
+
+			node_ = parent_->get_node(path_);
 
 			if (on_instanced) on_instanced();
 
@@ -51,7 +59,9 @@ public:
 
 private:
 
-	godot::Node* node_;
+	godot::Node* parent_ = nullptr;
+	godot::NodePath path_;
+	godot::Node* node_ = nullptr;
 };
 
 template <class T>
@@ -59,8 +69,10 @@ class Placeholder : public GenericPlaceholder
 {
 public:
 
-	Placeholder(godot::InstancePlaceholder* instance_placeholder)
-		: GenericPlaceholder(instance_placeholder)
+	Placeholder() = default;
+
+	Placeholder(godot::Node* parent, godot::NodePath path)
+		: GenericPlaceholder(parent, path)
 	{
 	}
 

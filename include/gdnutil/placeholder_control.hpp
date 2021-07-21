@@ -8,8 +8,9 @@ class GenericPlaceholderControl : public GenericPlaceholder
 {
 public:
 
-	GenericPlaceholderControl(godot::InstancePlaceholder* instance_placeholder)
-		: GenericPlaceholder(instance_placeholder)
+	GenericPlaceholderControl() = default;
+	GenericPlaceholderControl(godot::Node* parent, godot::NodePath path)
+		: GenericPlaceholder(parent, path)
 	{
 	}
 
@@ -52,8 +53,10 @@ class PlaceholderControl : public GenericPlaceholderControl
 {
 public:
 
-	PlaceholderControl(godot::InstancePlaceholder* instance_placeholder)
-		: GenericPlaceholderControl(instance_placeholder)
+	PlaceholderControl() = default;
+
+	PlaceholderControl(godot::Node* parent, godot::NodePath path)
+		: GenericPlaceholderControl(parent, path)
 	{
 	}
 
