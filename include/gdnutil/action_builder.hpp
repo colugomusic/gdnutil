@@ -11,11 +11,11 @@ class ActionBuilder
 {
 public:
 
-	ActionBuilder(godot::UndoRedo* undo_redo, godot::Object* object, godot::String name)
+	ActionBuilder(godot::UndoRedo* undo_redo, godot::Object* object, godot::String name, int64_t merge_mode = 0)
 		: undo_redo_(undo_redo)
 		, object_(object)
 	{
-		undo_redo->create_action(name);
+		undo_redo->create_action(name, merge_mode);
 	}
 
 	~ActionBuilder()
