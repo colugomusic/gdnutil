@@ -18,12 +18,15 @@ class OncePerFrame : public godot::Reference
 
 public:
 
+	GDN_SIGNAL(event);
+
 	using Task = std::function<void()>;
 
 	static void _register_methods()
 	{
 		GDN_REG_SLOT(OncePerFrame, on_triggered);
 
+		godot::register_signal<OncePerFrame>(event, godot::Dictionary());
 		godot::register_signal<OncePerFrame>(triggered, godot::Dictionary());
 	}
 
@@ -52,8 +55,11 @@ private:
 
 	GDN_SLOT(on_triggered, ())
 	{
-		task_();
+		if (task_) task_();
+
 		triggered_ = false;
+
+		emit_signal(event);
 	}
 
 	Task task_;
