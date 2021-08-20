@@ -23,10 +23,11 @@ public:
 		{
 			struct Button
 			{
+				MBTask on_event;
 				MBTask on_pressed;
 				MBTask on_released;
 
-				operator bool() const { return on_pressed || on_released; }
+				operator bool() const { return on_event || on_pressed || on_released; }
 			};
 
 			Button left;
@@ -38,27 +39,36 @@ public:
 
 		struct MM
 		{
-			MMTask on_mouse_motion;
+			MMTask on_event;
 
-			operator bool() const { return on_mouse_motion.operator bool(); }
+			operator bool() const { return on_event.operator bool(); }
 		} mm;
 
 		operator bool() const { return mb || mm; }
 	} config;
 
+	struct State
+	{
+		struct MB
+		{
+			struct Button
+			{
+				bool pressed = false;
+			};
+
+			Button left;
+			Button right;
+		} mb;
+	} state;
+
 	void operator()(godot::Ref<godot::InputEvent> event)
 	{
-		if (!config) return;
+		godot::Ref<godot::InputEventMouseButton> mb = event;
 
-		if (config.mb)
+		if (mb.is_valid())
 		{
-			godot::Ref<godot::InputEventMouseButton> mb = event;
-
-			if (mb.is_valid())
-			{
-				_gui_mb(mb);
-				return;
-			}
+			_gui_mb(mb);
+			return;
 		}
 
 		if (config.mm)
@@ -67,7 +77,7 @@ public:
 
 			if (mm.is_valid())
 			{
-				config.mm.on_mouse_motion(mm);
+				config.mm.on_event(mm);
 				return;
 			}
 		}
@@ -85,21 +95,25 @@ private:
 
 		const auto button_index = mb->get_button_index();
 
-		if (config.mb.left && button_index == godot::GlobalConstants::BUTTON_LEFT)
+		if (button_index == godot::GlobalConstants::BUTTON_LEFT)
 		{
-			_gui_mb(config.mb.left, mb);
+			_gui_mb(config.mb.left, &state.mb.left, mb);
 			return;
 		}
 
-		if (config.mb.right && button_index == godot::GlobalConstants::BUTTON_RIGHT)
+		if (button_index == godot::GlobalConstants::BUTTON_RIGHT)
 		{
-			_gui_mb(config.mb.right, mb);
+			_gui_mb(config.mb.right, &state.mb.right, mb);
 			return;
 		}
 	}
 	
-	void _gui_mb(const Config::MB::Button& config, const godot::Ref<godot::InputEventMouseButton> mb)
+	void _gui_mb(const Config::MB::Button& config, State::MB::Button* state, const godot::Ref<godot::InputEventMouseButton> mb)
 	{
+		if (config.on_event) config.on_event(mb);
+
+		state->pressed = mb->is_pressed();
+
 		if (mb->is_pressed())
 		{
 			if (config.on_pressed) config.on_pressed(mb);
