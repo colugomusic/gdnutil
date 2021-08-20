@@ -10,7 +10,7 @@
 
 namespace gdn {
 
-class GuiInput
+class InputHandler
 {
 public:
 
