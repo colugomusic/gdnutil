@@ -38,6 +38,8 @@ public:
 		undo_redo_ = rhs.undo_redo_;
 		object_ = rhs.object_;
 		rhs.undo_redo_ = nullptr;
+
+		return *this;
 	}
 
 	template <class ...Args> void add_do(godot::String method, Args... args)
