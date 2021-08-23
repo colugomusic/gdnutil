@@ -4,8 +4,10 @@
 
 #pragma warning(push, 0)
 #include <GlobalConstants.hpp>
+#include <Input.hpp>
 #include <InputEventMouseButton.hpp>
 #include <InputEventMouseMotion.hpp>
+#include <SceneTree.hpp>
 #pragma warning(pop)
 
 namespace gdn {
@@ -67,7 +69,7 @@ public:
 
 		if (mb.is_valid())
 		{
-			_gui_mb(mb);
+			_mb(mb);
 			return;
 		}
 
@@ -85,7 +87,7 @@ public:
 
 private:
 
-	void _gui_mb(godot::Ref<godot::InputEventMouseButton> mb)
+	void _mb(godot::Ref<godot::InputEventMouseButton> mb)
 	{
 		if (config.mb.on_double_click && mb->is_doubleclick())
 		{
@@ -97,22 +99,22 @@ private:
 
 		if (button_index == godot::GlobalConstants::BUTTON_LEFT)
 		{
-			_gui_mb(config.mb.left, &state.mb.left, mb);
+			_mb(config.mb.left, &state.mb.left, mb);
 			return;
 		}
 
 		if (button_index == godot::GlobalConstants::BUTTON_RIGHT)
 		{
-			_gui_mb(config.mb.right, &state.mb.right, mb);
+			_mb(config.mb.right, &state.mb.right, mb);
 			return;
 		}
 	}
 	
-	void _gui_mb(const Config::MB::Button& config, State::MB::Button* state, const godot::Ref<godot::InputEventMouseButton> mb)
+	void _mb(const Config::MB::Button& config, State::MB::Button* state, const godot::Ref<godot::InputEventMouseButton> mb)
 	{
-		if (config.on_event) config.on_event(mb);
-
 		state->pressed = mb->is_pressed();
+
+		if (config.on_event) config.on_event(mb);
 
 		if (mb->is_pressed())
 		{
