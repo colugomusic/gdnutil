@@ -8,3 +8,4 @@
 #define GDN_SLOT(Name, Args) static constexpr auto Name = "_"#Name; void _##Name Args
 #define GDN_VIRTUAL_SLOT(Name, Args) static constexpr auto Name = "_"#Name; virtual void _##Name Args
 #define GDN_PROPERTY(Type, Name) Type Name##_
+#define GDN_GET_NODE(Parent, Type, Name) Name = gdn::tree::get<Type>(Parent, #Name)
