@@ -47,7 +47,7 @@ public:
 
 	bool is_instanced() const
 	{
-		return !get<godot::InstancePlaceholder>();
+		return node_ && !get<godot::InstancePlaceholder>();
 	}
 
 	template <class T> T* get() const
