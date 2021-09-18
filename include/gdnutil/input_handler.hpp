@@ -6,6 +6,7 @@
 #pragma warning(push, 0)
 #include <GlobalConstants.hpp>
 #include <Input.hpp>
+#include <InputEventKey.hpp>
 #include <InputEventMouseButton.hpp>
 #include <InputEventMouseMotion.hpp>
 #include <SceneTree.hpp>
@@ -20,6 +21,7 @@ public:
 	using Task = std::function<void(godot::Ref<godot::InputEvent>)>;
 	using MBTask = std::function<void(godot::Ref<godot::InputEventMouseButton>)>;
 	using MMTask = std::function<void(godot::Ref<godot::InputEventMouseMotion>)>;
+	using KeyTask = std::function<void(godot::Ref<godot::InputEventKey>)>;
 
 	struct Config
 	{
@@ -57,9 +59,16 @@ public:
 			operator bool() const { return on_event.operator bool(); }
 		} mm;
 
+		struct Key
+		{
+			KeyTask on_event;
+
+			operator bool() const { return on_event.operator bool(); }
+		} key;
+
 		std::map<godot::String, Action> actions;
 
-		operator bool() const { return mb || mm; }
+		operator bool() const { return mb || mm || key; }
 	} config;
 
 	struct State
@@ -103,6 +112,17 @@ public:
 			if (mm.is_valid())
 			{
 				config.mm.on_event(mm);
+				return;
+			}
+		}
+
+		if (config.key)
+		{
+			godot::Ref<godot::InputEventKey> key = event;
+
+			if (key.is_valid())
+			{
+				config.key.on_event(key);
 				return;
 			}
 		}
