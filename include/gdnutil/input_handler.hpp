@@ -42,6 +42,7 @@ public:
 				operator bool() const { return on_event || on_pressed || on_released; }
 			};
 
+			Button any;
 			Button left;
 			Button middle;
 			Button right;
@@ -49,7 +50,7 @@ public:
 			Button wheel_up;
 			MBTask on_double_click;
 
-			operator bool() const { return left || middle || right || wheel_down || wheel_up || on_double_click; }
+			operator bool() const { return any || left || middle || right || wheel_down || wheel_up || on_double_click; }
 		} mb;
 
 		struct MM
@@ -193,17 +194,20 @@ private:
 		_mb(config, mb);
 	}
 
-	void _mb(const Config::MB::Button& config, const godot::Ref<godot::InputEventMouseButton> mb)
+	void _mb(const Config::MB::Button& mb_config, const godot::Ref<godot::InputEventMouseButton> mb)
 	{
-		if (config.on_event) config.on_event(mb);
+		if (mb_config.on_event) mb_config.on_event(mb);
+		if (config.mb.any.on_event) config.mb.any.on_event(mb);
 
 		if (mb->is_pressed())
 		{
-			if (config.on_pressed) config.on_pressed(mb);
+			if (mb_config.on_pressed) mb_config.on_pressed(mb);
+			if (config.mb.any.on_pressed) config.mb.any.on_pressed(mb);
 		}
 		else
 		{
-			if (config.on_released) config.on_released(mb);
+			if (mb_config.on_released) mb_config.on_released(mb);
+			if (config.mb.any.on_released) config.mb.any.on_released(mb);
 		}
 	}
 
