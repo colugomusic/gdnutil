@@ -83,6 +83,11 @@ inline auto bottom(godot::Control* c)
 	return c->get_global_position().y + c->get_size().height;
 }
 
+inline auto bottom_left(godot::Control* c)
+{
+	return c->get_global_position() + godot::Vector2{0.0f, c->get_size().height};
+}
+
 inline auto end(godot::Control* c)
 {
 	return c->get_global_position() + c->get_size();
