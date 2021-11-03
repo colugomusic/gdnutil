@@ -6,7 +6,7 @@
 
 namespace gdn {
 
-inline auto width(godot::Control* c)
+inline auto width(const godot::Control* c)
 {
 	return c->get_size().width;
 }
