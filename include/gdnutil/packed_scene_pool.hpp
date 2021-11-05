@@ -3,9 +3,12 @@
 #include <vector>
 
 #pragma warning(push, 0)
+#include <Array.hpp>
 #include <Godot.hpp>
+#include <Node.hpp>
 #include <PackedScene.hpp>
 #include <ResourceLoader.hpp>
+#include <String.hpp>
 #pragma warning(pop)
 
 #include "macros.hpp"
@@ -20,13 +23,14 @@ public:
 
     int min_size { 10 };
     int max_size { 100 };
-    int chunk_size { 10 };
-    int fill_amount { 2 };
+    int chunk_size { 1 };
+    int fill_amount { 20 };
 
     static void _register_methods()
     {
         GDN_REG_METHOD(PackedScenePool, _process);
         GDN_REG_METHOD(PackedScenePool, _ready);
+        GDN_REG_METHOD(PackedScenePool, free_scene);
     }
 
     void _init()
@@ -48,7 +52,7 @@ public:
         set_scene(godot::ResourceLoader::get_singleton()->load(path));
     }
 
-    godot::Node* instance()
+    godot::Node* instance(bool force_ready = true)
     {
         if (size_ > 0)
         {
@@ -56,32 +60,45 @@ public:
 
             if (size_ < min_size)
             {
+				max_size *= 2;
 				make_more();
             }
 
 #ifdef _DEBUG
-			godot::Godot::print("got an instance from the pool");
+			//godot::Godot::print("got an instance from the pool");
 #endif
-            return pool_[size_ - 1];
+			const auto out = pool_[size_];
+
+			remove_child(out);
+
+            return out;
         }
 
 		make_more();
 
 #ifdef _DEBUG
-		godot::Godot::print("made a new instance");
+		//godot::Godot::print("made a new instance");
 #endif
-        return scene_->instance();
+        const auto out = scene_->instance();
+
+		if (force_ready)
+		{
+			add_child(out);
+			remove_child(out);
+		}
+
+		return out;
     }
 
 	void make_more()
 	{
 		if (scene_.is_null()) return;
-		if (chunks_remaining_ > 0) return;
+		if (fill_remaining_ > 0) return;
 
 #ifdef _DEBUG
-		godot::Godot::print("making more instances...");
+		//godot::Godot::print("making more instances...");
 #endif
-		chunks_remaining_ += fill_amount;
+		fill_remaining_ += fill_amount;
 		set_process(true);
 	}
 
@@ -92,6 +109,10 @@ public:
             node->free();
             return;
         }
+
+		const auto parent = node->get_parent();
+
+		if (parent) parent->remove_child(node);
 
         add_to_pool(node);
     }
@@ -104,7 +125,7 @@ public:
             return;
         }
 
-        add_to_pool(node);
+		call_deferred("free_scene", node);
     }
 
 private:
@@ -116,7 +137,9 @@ private:
             add_to_pool(scene_->instance());
         }
 
-        if (--chunks_remaining_ <= 0)
+		fill_remaining_ -= chunk_size;
+
+        if (fill_remaining_ <= 0)
         {
             set_process(false);
         }
@@ -131,8 +154,10 @@ private:
 
         pool_[size_++] = node;
 
+		add_child(node);
+
 #ifdef _DEBUG
-		godot::Godot::print("added a new instance to the pool");
+		//godot::Godot::print(godot::String("Added new '{0}' instance to the pool [{1}]").format(godot::Array::make(node->get_name(), size_)));
 #endif
     }
 
@@ -140,7 +165,7 @@ private:
     std::vector<godot::Node*> pool_;
 
     int size_ { 0 };
-    int chunks_remaining_ { 0 };
+    int fill_remaining_ { 0 };
 };
 
 } // gdn
