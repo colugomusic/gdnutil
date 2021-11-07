@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 
 #pragma warning(push, 0)
 #include <Control.hpp>
@@ -37,7 +38,10 @@ public:
 
 			node_ = parent_->get_node(path_);
 
-			if (on_instanced) on_instanced();
+			for (const auto func : on_instanced)
+			{
+				func();
+			}
 
 			return true;
 		}
@@ -55,7 +59,7 @@ public:
 		return godot::Object::cast_to<T>(node_);
 	}
 
-	std::function<void()> on_instanced;
+	std::vector<std::function<void()>> on_instanced;
 
 private:
 
