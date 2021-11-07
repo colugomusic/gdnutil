@@ -64,9 +64,7 @@ public:
 				make_more();
             }
 
-#ifdef _DEBUG
 			//godot::Godot::print("got an instance from the pool");
-#endif
 			const auto out = pool_[size_];
 
 			remove_child(out);
@@ -76,9 +74,7 @@ public:
 
 		make_more();
 
-#ifdef _DEBUG
 		//godot::Godot::print("made a new instance");
-#endif
         const auto out = scene_->instance();
 
 		if (force_ready)
@@ -95,9 +91,7 @@ public:
 		if (scene_.is_null()) return;
 		if (fill_remaining_ > 0) return;
 
-#ifdef _DEBUG
 		//godot::Godot::print("making more instances...");
-#endif
 		fill_remaining_ += fill_amount;
 		set_process(true);
 	}
@@ -156,9 +150,7 @@ private:
 
 		add_child(node);
 
-#ifdef _DEBUG
 		//godot::Godot::print(godot::String("Added new '{0}' instance to the pool [{1}]").format(godot::Array::make(node->get_name(), size_)));
-#endif
     }
 
     godot::Ref<godot::PackedScene> scene_;
