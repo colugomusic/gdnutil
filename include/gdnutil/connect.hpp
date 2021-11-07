@@ -22,6 +22,8 @@ class ConnectionMap
 {
 public:
 
+	ConnectionMap() = default;
+
 	ConnectionMap(std::initializer_list<Connection> connections)
 		: connections_(connections)
 	{
