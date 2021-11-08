@@ -45,6 +45,46 @@ public:
 		}
 	}
 
+	struct Connector
+	{
+		Connector(const ConnectionMap& map, godot::Object* from) : map_(&map), from_(from) {}
+
+		void to(godot::Object* to) const
+		{
+			map_->connect(from_, to);
+		}
+
+	private:
+
+		godot::Object* from_;
+		const ConnectionMap* map_;
+	};
+
+	struct Disonnector
+	{
+		Disonnector(const ConnectionMap& map, godot::Object* object) : map_(&map), object_(object) {}
+
+		void from(godot::Object* from) const
+		{
+			map_->connect(object_, from);
+		}
+
+	private:
+
+		godot::Object* object_;
+		const ConnectionMap* map_;
+	};
+
+	auto connect(godot::Object* from) const
+	{
+		return Connector{*this, from};
+	}
+
+	auto disconnect(godot::Object* from) const
+	{
+		return Disonnector{*this, from};
+	}
+
 private:
 
 	std::vector<Connection> connections_;
