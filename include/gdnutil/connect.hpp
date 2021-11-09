@@ -66,7 +66,7 @@ public:
 
 		void from(godot::Object* from) const
 		{
-			map_->connect(object_, from);
+			map_->disconnect(object_, from);
 		}
 
 	private:
