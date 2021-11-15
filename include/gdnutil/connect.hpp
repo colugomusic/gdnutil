@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <utility>
 #include <vector>
 
@@ -90,4 +91,38 @@ private:
 	std::vector<Connection> connections_;
 };
 
+template <class T>
+class Connectable
+{
+public:
+
+	std::function<void(T* object)> connector;
+	std::function<void(T* object)> disconnector;
+
+	void set(T* object)
+	{
+		if (object == object_) return;
+
+		if (object_ && disconnector) disconnector(object_);
+
+		object_ = object;
+
+		if (object_ && connector) connector(object);
+	}
+
+	void reset()
+	{
+		set(nullptr);
+	}
+
+	Connectable<T>& operator=(T* object) { set(object); return *this; }
+
+	operator bool() const { return object_; }
+	T* get() const { return object_; }
+	T* operator->() const { return get(); }
+
+private:
+
+	T* object_ { nullptr };
+};
 } // gdn
