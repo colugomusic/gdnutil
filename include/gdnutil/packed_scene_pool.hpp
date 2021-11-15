@@ -52,7 +52,7 @@ public:
         set_scene(godot::ResourceLoader::get_singleton()->load(path));
     }
 
-    godot::Node* instance(bool force_ready = true)
+    godot::Node* instance()
     {
         if (size_ > 0)
         {
@@ -64,7 +64,8 @@ public:
 				make_more();
             }
 
-			//godot::Godot::print("got an instance from the pool");
+			//godot::Godot::print(godot::String("Got a {0} instance from the pool [{1}]").format(godot::Array::make(pool_[0]->get_name(), size_)));
+
 			const auto out = pool_[size_];
 
 			remove_child(out);
@@ -75,15 +76,7 @@ public:
 		make_more();
 
 		//godot::Godot::print("made a new instance");
-        const auto out = scene_->instance();
-
-		if (force_ready)
-		{
-			add_child(out);
-			remove_child(out);
-		}
-
-		return out;
+        return scene_->instance();
     }
 
 	void make_more()
@@ -109,6 +102,8 @@ public:
 		if (parent) parent->remove_child(node);
 
         add_to_pool(node);
+
+		//godot::Godot::print(godot::String("Returned a {0} instance to the pool [{1}]").format(godot::Array::make(pool_[0]->get_name(), size_)));
     }
 
     void queue_free_scene(godot::Node* node)
@@ -131,6 +126,8 @@ private:
             add_to_pool(scene_->instance());
         }
 
+		//godot::Godot::print(godot::String("Added {0} new '{1}' instances to the pool [{2}]").format(godot::Array::make(chunk_size, pool_[0]->get_name(), size_)));
+
 		fill_remaining_ -= chunk_size;
 
         if (fill_remaining_ <= 0)
@@ -149,8 +146,6 @@ private:
         pool_[size_++] = node;
 
 		add_child(node);
-
-		//godot::Godot::print(godot::String("Added new '{0}' instance to the pool [{1}]").format(godot::Array::make(node->get_name(), size_)));
     }
 
     godot::Ref<godot::PackedScene> scene_;
