@@ -4,6 +4,7 @@
 
 #pragma warning(push, 0)
 #include <Array.hpp>
+#include <Array.hpp>
 #include <Godot.hpp>
 #include <Node.hpp>
 #include <PackedScene.hpp>
@@ -17,7 +18,7 @@ namespace gdn {
 
 class PackedScenePool : public godot::Node
 {
-    GODOT_CLASS(PackedScenePool, godot::Node);
+    GDN_CLASS(PackedScenePool, godot::Node);
 
 public:
 
@@ -28,9 +29,9 @@ public:
 
     static void _register_methods()
     {
-        GDN_REG_METHOD(PackedScenePool, _process);
-        GDN_REG_METHOD(PackedScenePool, _ready);
-        GDN_REG_METHOD(PackedScenePool, free_scene);
+        GDN_REG_METHOD(_process);
+        GDN_REG_METHOD(_ready);
+        GDN_REG_METHOD(free_scene);
     }
 
     void _init()

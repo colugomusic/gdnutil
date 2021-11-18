@@ -14,7 +14,7 @@ namespace gdn {
 
 class OncePerFrame : public godot::Reference
 {
-	GODOT_CLASS(OncePerFrame, godot::Reference);
+	GDN_CLASS(OncePerFrame, godot::Reference);
 
 public:
 
@@ -24,7 +24,7 @@ public:
 
 	static void _register_methods()
 	{
-		GDN_REG_SLOT(OncePerFrame, on_triggered);
+		GDN_REG_SLOT(on_triggered);
 
 		godot::register_signal<OncePerFrame>(event, godot::Dictionary());
 		godot::register_signal<OncePerFrame>(triggered, godot::Dictionary());
