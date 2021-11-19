@@ -192,6 +192,12 @@ public:
 
 private:
 
+    GDN_SLOT(on_mouse_entered, ()) {}
+    GDN_SLOT(on_mouse_exited, ()) {}
+    GDN_SLOT(on_custom_signal, (int value)) {}
+    GDN_SLOT(on_thing_signal, ()) {}
+    GDN_SLOT(on_widget_signal, ()) {}
+    
     void _ready()
     {
         autoloads_.Manager = gdn::tree::get<ManagerClass>("Manager"));
@@ -204,12 +210,6 @@ private:
     {
         input_.gui(event);
     }
-
-    void _on_mouse_entered() {}
-    void _on_mouse_exited() {}
-    void _on_custom_signal(int value) {}
-    void _on_thing_signal() {}
-    void _on_widget_signal() {}
 
     void do_something()
     {
