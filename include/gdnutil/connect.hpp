@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -30,11 +31,11 @@ public:
 	{
 	}
 
-	void connect(godot::Object* from, godot::Object* to) const
+	void connect(godot::Object* from, godot::Object* to, godot::Array binds = godot::Array(), int64_t flags = 0) const
 	{
 		for (const auto& connection : connections_)
 		{
-			from->connect(connection.signal, to, connection.slot, connection.binds, connection.flags);
+			from->connect(connection.signal, to, connection.slot, binds.empty() ? connection.binds : binds, flags == 0 ? connection.flags : flags);
 		}
 	}
 
@@ -50,9 +51,9 @@ public:
 	{
 		Connector(const ConnectionMap& map, godot::Object* from) : map_(&map), from_(from) {}
 
-		void to(godot::Object* to) const
+		void to(godot::Object* to, godot::Array binds = godot::Array(), int64_t flags = 0) const
 		{
-			map_->connect(from_, to);
+			map_->connect(from_, to, binds, flags);
 		}
 
 	private:
@@ -125,4 +126,33 @@ private:
 
 	T* object_ { nullptr };
 };
+
+template <class T>
+class OneShotConnectable
+{
+public:
+
+	std::function<void(T* object)> connector;
+
+	void set(T* object)
+	{
+		assert(!object_);
+		assert(object);
+
+		object_ = object;
+
+		if (connector) connector(object);
+	}
+
+	OneShotConnectable<T>& operator=(T* object) { set(object); return *this; }
+
+	operator bool() const { return object_; }
+	T* get() const { return object_; }
+	T* operator->() const { return get(); }
+
+private:
+
+	T* object_ { nullptr };
+};
+
 } // gdn
