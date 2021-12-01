@@ -35,7 +35,9 @@ public:
 	{
 		for (const auto& connection : connections_)
 		{
+			assert(!from->is_connected(connection.signal, to, connection.slot));
 			from->connect(connection.signal, to, connection.slot, binds.empty() ? connection.binds : binds, flags == 0 ? connection.flags : flags);
+			assert(from->is_connected(connection.signal, to, connection.slot));
 		}
 	}
 
@@ -43,7 +45,9 @@ public:
 	{
 		for (const auto& connection : connections_)
 		{
+			assert(from->is_connected(connection.signal, to, connection.slot));
 			from->disconnect(connection.signal, to, connection.slot);
+			assert(!from->is_connected(connection.signal, to, connection.slot));
 		}
 	}
 
