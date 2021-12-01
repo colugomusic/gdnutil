@@ -103,7 +103,22 @@ inline auto end(const godot::Control* c)
 	return c->get_global_position() + c->get_size();
 }
 
+inline void set_x(godot::Control* c, float x)
+{
+	c->set_global_position({ x, c->get_global_position().y });
+}
+
+inline void set_y(godot::Control* c, float y)
+{
+	c->set_global_position({ c->get_global_position().x, y });
+}
+
 } // global
+
+inline void nudge(godot::Control* c, godot::Vector2 amount)
+{
+	c->set_position(c->get_position() + amount);
+}
 
 inline void set_opacity(godot::Control* c, float opacity)
 {
@@ -112,6 +127,26 @@ inline void set_opacity(godot::Control* c, float opacity)
 	modulate.a = opacity;
 
 	c->set_modulate(modulate);
+}
+
+inline void set_width(godot::Control* c, float width)
+{
+	c->set_size({ width, c->get_size().height });
+}
+
+inline void set_height(godot::Control* c, float height)
+{
+	c->set_size({ c->get_size().width, height });
+}
+
+inline void set_x(godot::Control* c, float x)
+{
+	c->set_position({ x, c->get_position().y });
+}
+
+inline void set_y(godot::Control* c, float y)
+{
+	c->set_position({ c->get_position().x, y });
 }
 
 inline void bring_to_front(godot::Control* c)
