@@ -46,6 +46,11 @@ inline auto bottom_left(const godot::Control* c)
 	return c->get_position() + godot::Vector2 { 0.0f, c->get_size().height };
 }
 
+inline auto bottom_left(godot::Rect2 rect)
+{
+	return rect.position + godot::Vector2{0.0f, rect.size.height};
+}
+
 inline auto top(const godot::Control* c)
 {
 	return c->get_position().y;
