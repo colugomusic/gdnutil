@@ -2,7 +2,6 @@
 
 #include <functional>
 #include <Control.hpp>
-#include <Input.hpp>
 
 namespace gdn {
 
@@ -24,14 +23,14 @@ public:
 
 			case godot::Control::NOTIFICATION_MOUSE_EXIT:
 			case godot::Control::NOTIFICATION_EXIT_TREE:
-			case godot::Control::NOTIFICATION_WM_FOCUS_OUT:
-			case godot::Control::NOTIFICATION_WM_MOUSE_EXIT:
 			{
 				set(false);
+
 				return;
 			}
 
 			case godot::Control::NOTIFICATION_POST_ENTER_TREE:
+			case godot::Control::NOTIFICATION_RESIZED:
 			case godot::Control::NOTIFICATION_VISIBILITY_CHANGED:
 			{
 				set(get_hover_status_from_rect_if_visible(control));
