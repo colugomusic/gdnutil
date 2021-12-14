@@ -134,6 +134,15 @@ inline void set_opacity(godot::Control* c, float opacity)
 	c->set_modulate(modulate);
 }
 
+inline void set_self_opacity(godot::Control* c, float opacity)
+{
+	auto modulate = c->get_self_modulate();
+
+	modulate.a = opacity;
+
+	c->set_self_modulate(modulate);
+}
+
 inline void set_width(godot::Control* c, float width)
 {
 	c->set_size({ width, c->get_size().height });
