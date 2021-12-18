@@ -16,4 +16,4 @@
 #define GDN_PROPERTY(Type, Name) Type Name##_
 #define GDN_GET_NODE(Parent, Type, Name) Name = gdn::tree::get<Type>(Parent, #Name)
 #define GDN_CLASS(Name, Base) GODOT_CLASS(Name, Base); using GDN_THIS_CLASS = Name
-#define GDN_REG_SIGNAL(Args) register_signal<GDN_THIS_CLASS> Args
+#define GDN_REG_SIGNAL(Args) godot::register_signal<GDN_THIS_CLASS> Args
