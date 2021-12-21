@@ -6,6 +6,11 @@
 
 namespace gdn {
 
+inline bool is_hovered(const godot::Control* c)
+{
+	return c->is_visible() && c->get_global_rect().has_point(c->get_global_mouse_position());
+}
+
 inline auto width(const godot::Control* c)
 {
 	return c->get_size().width;
