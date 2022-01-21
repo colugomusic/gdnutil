@@ -73,6 +73,11 @@ inline auto end(const godot::Control* c)
 
 namespace global {
 
+inline auto top_left(const godot::Control* c)
+{
+	return c->get_global_position();
+}
+
 inline auto left(const godot::Control* c)
 {
 	return c->get_global_position().x;
