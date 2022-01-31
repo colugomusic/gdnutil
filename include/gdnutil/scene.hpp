@@ -7,6 +7,8 @@
 #include <Node.hpp>
 #pragma warning(pop)
 
+#include "control_helpers.hpp"
+
 namespace gdn {
 
 struct Scene
@@ -27,6 +29,27 @@ struct Scene
 		}
 
 		return out;
+	}
+
+	auto calculate_content_width(const godot::Node* root) const -> float
+	{
+		float widest { 0.0f };
+
+		for (int i = 0; i < root->get_child_count(); i++)
+		{
+			const auto child { godot::Object::cast_to<godot::Control>(root->get_child(i)) };
+
+			if (!child || !child->is_visible()) continue;
+
+			const auto width { gdn::width(child) };
+
+			if (width > widest)
+			{
+				widest = width;
+			}
+		}
+
+		return widest;
 	}
 
 	std::set<godot::Node*> known_nodes;
