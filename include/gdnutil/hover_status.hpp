@@ -22,7 +22,7 @@ public:
 			}
 
 			case godot::Control::NOTIFICATION_MOUSE_EXIT:
-			case godot::Control::NOTIFICATION_EXIT_TREE:
+			//case godot::Control::NOTIFICATION_EXIT_TREE:
 			{
 				set(false);
 
