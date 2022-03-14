@@ -25,11 +25,14 @@ inline godot::Node* get(godot::SceneTree* main_tree, godot::NodePath path)
 	return get(main_tree->get_root(), path);
 }
 
+inline godot::SceneTree* scene_tree()
+{
+	return godot::Object::cast_to<godot::SceneTree>(godot::Engine::get_singleton()->get_main_loop());
+}
+
 inline godot::Node* get(godot::NodePath path)
 {
-	const auto main_tree = godot::Object::cast_to<godot::SceneTree>(godot::Engine::get_singleton()->get_main_loop());
-
-	return get(main_tree, path);
+	return get(scene_tree(), path);
 }
 
 inline godot::Node* get(godot::Node* parent, godot::NodePath path)
