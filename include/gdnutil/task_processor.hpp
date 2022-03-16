@@ -37,7 +37,7 @@ public:
 	auto _init() -> void;
 
 	auto stop() -> void;
-	auto push(Task task) -> void;
+	auto push(Task task, int64_t id = -1) -> void;
 
 private:
 
@@ -87,13 +87,13 @@ inline auto TaskProcessorNode::_on_tree_exiting() -> void
 	on_tree_exiting_();
 }
 
-inline auto TaskProcessorNode::push(Task task) -> void
+inline auto TaskProcessorNode::push(Task task, int64_t id) -> void
 {
 	const auto this_thread { std::this_thread::get_id() };
 
 	if (this_thread == main_thread_)
 	{
-		push_serial(task);
+		push_serial(task, id);
 	}
 	else
 	{
@@ -126,7 +126,11 @@ inline auto TaskProcessorNode::push_serial(Task task, int64_t id) -> void
 inline auto TaskProcessorNode::_process([[maybe_unused]] float delta) -> void
 {
 	process_serial();
-	config_.process_parallel();
+
+	if (config_.process_parallel)
+	{
+		config_.process_parallel();
+	}
 }
 
 inline auto TaskProcessorNode::process_serial() -> void
@@ -152,7 +156,7 @@ public:
 	~TaskProcessor();
 
 	auto start() -> void;
-	auto push(Task task) -> void;
+	auto push(Task task, int64_t id = -1) -> void;
 
 private:
 
@@ -191,11 +195,11 @@ inline auto TaskProcessor::start() -> void
 	gdn::tree::scene_tree()->get_root()->call_deferred("add_child", node_);
 }
 
-inline auto TaskProcessor::push(Task task) -> void
+inline auto TaskProcessor::push(Task task, int64_t id) -> void
 {
 	if (!node_) start();
 
-	node_->push(task);
+	node_->push(task, id);
 }
 
 } // gdn
