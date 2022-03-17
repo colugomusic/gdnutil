@@ -127,10 +127,7 @@ inline auto TaskProcessorNode::push_serial(Task task, int64_t id) -> void
 
 inline auto TaskProcessorNode::_process([[maybe_unused]] float delta) -> void
 {
-	if (is_queued_for_deletion())
-	{
-		return;
-	}
+	assert(!is_queued_for_deletion());
 
 	process_serial();
 
