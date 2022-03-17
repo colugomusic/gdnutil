@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <vector>
 #include <Node.hpp>
@@ -28,6 +29,7 @@ public:
 	{
 		std::function<void(Task)> push_parallel;
 		std::function<void()> process_parallel;
+		std::string tag; // For debugging
 	};
 
 	static auto _register_methods() -> void;
@@ -112,6 +114,8 @@ inline auto TaskProcessorNode::stop() -> void
 
 inline auto TaskProcessorNode::push_serial(Task task, int64_t id) -> void
 {
+	assert(task);
+
 	if (id >= 0)
 	{
 		if (serial_tasks_.find(id) == serial_tasks_.end())
