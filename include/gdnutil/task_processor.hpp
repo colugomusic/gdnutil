@@ -105,7 +105,6 @@ inline auto TaskProcessorNode::push(Task task, int64_t id) -> void
 inline auto TaskProcessorNode::stop() -> void
 {
 	set_process(false);
-	queue_free();
 }
 
 inline auto TaskProcessorNode::push_serial(Task task, int64_t id) -> void
@@ -174,6 +173,7 @@ inline TaskProcessor::~TaskProcessor()
 	if (!node_) return;
 
 	node_->stop();
+	node_->free();
 }
 
 // This should be called in the main thread.
