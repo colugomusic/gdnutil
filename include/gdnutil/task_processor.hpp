@@ -84,6 +84,7 @@ inline auto TaskProcessorNode::_init() -> void
 
 inline auto TaskProcessorNode::_on_tree_exiting() -> void
 {
+	stop();
 	on_tree_exiting_();
 }
 
@@ -104,7 +105,9 @@ inline auto TaskProcessorNode::push(Task task, int64_t id) -> void
 
 inline auto TaskProcessorNode::stop() -> void
 {
+	config_ = {};
 	set_process(false);
+	queue_free();
 }
 
 inline auto TaskProcessorNode::push_serial(Task task, int64_t id) -> void
@@ -124,6 +127,11 @@ inline auto TaskProcessorNode::push_serial(Task task, int64_t id) -> void
 
 inline auto TaskProcessorNode::_process([[maybe_unused]] float delta) -> void
 {
+	if (is_queued_for_deletion())
+	{
+		return;
+	}
+
 	process_serial();
 
 	if (config_.process_parallel)
@@ -173,7 +181,6 @@ inline TaskProcessor::~TaskProcessor()
 	if (!node_) return;
 
 	node_->stop();
-	node_->free();
 }
 
 // This should be called in the main thread.
