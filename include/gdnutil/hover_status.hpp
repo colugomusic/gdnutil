@@ -13,6 +13,8 @@ public:
 
 	void operator()(godot::Control* control, int what)
 	{
+		last_notification_ = what;
+
 		switch (what)
 		{
 			case godot::Control::NOTIFICATION_MOUSE_ENTER:
@@ -22,18 +24,28 @@ public:
 			}
 
 			case godot::Control::NOTIFICATION_MOUSE_EXIT:
-			//case godot::Control::NOTIFICATION_EXIT_TREE:
 			{
 				set(false);
 
 				return;
 			}
 
-			case godot::Control::NOTIFICATION_POST_ENTER_TREE:
 			case godot::Control::NOTIFICATION_RESIZED:
 			case godot::Control::NOTIFICATION_VISIBILITY_CHANGED:
 			{
 				set(get_hover_status_from_rect_if_visible(control));
+				return;
+			}
+
+			case godot::Control::NOTIFICATION_POST_ENTER_TREE:
+			{
+				set(get_hover_status_from_rect_if_visible(control), false);
+				return;
+			}
+
+			case godot::Control::NOTIFICATION_EXIT_TREE:
+			{
+				set(false, false);
 				return;
 			}
 		}
@@ -45,13 +57,13 @@ public:
 
 private:
 
-	void set(bool yes)
+	void set(bool yes, bool notify = true)
 	{
 		if (init_ && status_ == yes) return;
 
 		status_ = yes;
 
-		if (on_changed)
+		if (notify && on_changed)
 		{
 			init_ = true;
 			on_changed();
@@ -72,6 +84,7 @@ private:
 
 	bool init_ { false };
 	bool status_ { false };
+	int last_notification_ {};
 };
 
 } // gdn
