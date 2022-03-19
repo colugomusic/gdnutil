@@ -30,6 +30,7 @@ public:
 		std::function<void(Task)> push_parallel;
 		std::function<void()> process_parallel;
 		std::string tag; // For debugging
+		godot::Node* parent_node {};
 	};
 
 	static auto _register_methods() -> void;
@@ -201,7 +202,7 @@ inline auto TaskProcessor::start() -> void
 	node_ = TaskProcessorNode::_new();
 	node_->on_tree_exiting_ = on_node_tree_exiting;
 	node_->config_ = config_;
-	gdn::tree::scene_tree()->get_root()->call_deferred("add_child", node_);
+	config_.parent_node->call_deferred("add_child", node_);
 }
 
 inline auto TaskProcessor::push(Task task, int64_t id) -> void
