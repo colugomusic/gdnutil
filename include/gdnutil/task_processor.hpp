@@ -80,6 +80,7 @@ inline TaskProcessorNode::TaskProcessorNode()
 inline auto TaskProcessorNode::_init() -> void
 {
 	set_pause_mode(PAUSE_MODE_PROCESS);
+	set_process_priority(-1);
 
 	connect(tree_exiting, this, on_tree_exiting);
 }
