@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -192,7 +193,7 @@ inline TaskProcessor::~TaskProcessor()
 // sure you manually call start() from the main thread first.
 inline auto TaskProcessor::start() -> void
 {
-	assert(!node_);
+	if (node_) return;
 
 	const auto on_node_tree_exiting { [this]()
 	{
