@@ -31,6 +31,11 @@ inline auto right(const godot::Control* c)
 	return c->get_position().x + c->get_size().width;
 }
 
+inline auto right_middle(const godot::Control* c)
+{
+	return c->get_position() + godot::Vector2 { c->get_size().width, c->get_size().height * 0.5f };
+}
+
 inline auto center(const godot::Control* c)
 {
 	return c->get_position() + (c->get_size() * 0.5f);
@@ -76,6 +81,11 @@ namespace global {
 inline auto top_left(const godot::Control* c)
 {
 	return c->get_global_position();
+}
+
+inline auto top_right(const godot::Control* c)
+{
+	return c->get_global_position() + godot::Vector2 { c->get_size().width, 0.0f };
 }
 
 inline auto left(const godot::Control* c)
