@@ -43,6 +43,11 @@ public:
 		make_more();
     }
 
+	void set_parent_node(godot::Node* node)
+	{
+		parent_node_ = node;
+	}
+
     void set_scene(godot::Ref<godot::PackedScene> scene)
     {
         scene_ = scene;
@@ -67,11 +72,7 @@ public:
 
 			//godot::Godot::print(godot::String("Got a {0} instance from the pool [{1}]").format(godot::Array::make(pool_[0]->get_name(), size_)));
 
-			const auto out = pool_[size_];
-
-			remove_child(out);
-
-            return out;
+			return pool_[size_];
         }
 
 		make_more();
@@ -98,10 +99,6 @@ public:
             return;
         }
 
-		const auto parent = node->get_parent();
-
-		if (parent) parent->remove_child(node);
-
         add_to_pool(node);
 
 		//godot::Godot::print(godot::String("Returned a {0} instance to the pool [{1}]").format(godot::Array::make(pool_[0]->get_name(), size_)));
@@ -124,7 +121,11 @@ private:
     {
         for (int i = 0; i < chunk_size; i++)
         {
-            add_to_pool(scene_->instance());
+			const auto node { scene_->instance() };
+
+			parent_node_->add_child(node);
+
+            add_to_pool(node);
         }
 
 		//godot::Godot::print(godot::String("Added {0} new '{1}' instances to the pool [{2}]").format(godot::Array::make(chunk_size, pool_[0]->get_name(), size_)));
@@ -145,15 +146,14 @@ private:
 		}
 
         pool_[size_++] = node;
-
-		add_child(node);
     }
 
     godot::Ref<godot::PackedScene> scene_;
     std::vector<godot::Node*> pool_;
 
-    int size_ { 0 };
-    int fill_remaining_ { 0 };
+	godot::Node* parent_node_ { this };
+    int size_ {};
+    int fill_remaining_ {};
 };
 
 } // gdn
