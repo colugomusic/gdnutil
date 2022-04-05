@@ -12,7 +12,7 @@ namespace gdn {
 
 static void register_classes()
 {
-	godot::register_class<OncePerFrame>();
+	godot::register_class<detail::OncePerFrame>();
 	godot::register_class<PackedScenePool>();
 	godot::register_class<TaskProcessorNode>();
 }
