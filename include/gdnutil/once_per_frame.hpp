@@ -2,15 +2,12 @@
 
 #include <functional>
 #include <vector>
-
-#pragma warning(push, 0)
 #include <Godot.hpp>
 #include <Reference.hpp>
-#pragma warning(pop)
-
 #include "macros.hpp"
 
 namespace gdn {
+namespace detail {
 
 class OncePerFrame : public godot::Reference
 {
@@ -26,8 +23,8 @@ public:
 	{
 		GDN_REG_SLOT(on_triggered);
 
-		godot::register_signal<OncePerFrame>(event, godot::Dictionary());
-		godot::register_signal<OncePerFrame>(triggered, godot::Dictionary());
+		GDN_REG_SIGNAL((event));
+		GDN_REG_SIGNAL((triggered));
 	}
 
 	void _init()
@@ -49,6 +46,11 @@ public:
 		emit_signal(triggered);
 	}
 
+	void set_notify(bool yes)
+	{
+		notify_ = yes;
+	}
+
 private:
 
 	GDN_SIGNAL(triggered);
@@ -59,11 +61,36 @@ private:
 
 		triggered_ = false;
 
-		emit_signal(event);
+		if (notify_) emit_signal(event);
 	}
 
 	Task task_;
-	bool triggered_ = false;
+	bool triggered_ {};
+	bool notify_ {};
+};
+
+} // detail
+
+class OncePerFrame
+{
+public:
+
+	using Task = detail::OncePerFrame::Task;
+
+	OncePerFrame(Task task)
+	{
+		impl_.instance();
+		impl_->set_task(task);
+	}
+
+	auto operator()() -> void
+	{
+		impl_->trigger();
+	}
+
+private:
+
+	godot::Ref<detail::OncePerFrame> impl_;
 };
 
 } // gdn
