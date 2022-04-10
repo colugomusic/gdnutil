@@ -145,6 +145,15 @@ inline void set_y(godot::Control* c, float y)
 
 } // global
 
+namespace rect {
+
+inline auto top_right(const godot::Rect2& r)
+{
+	return r.position + godot::Vector2 { r.size.width, 0.0f };
+}
+
+} // rect
+
 inline void nudge(godot::Control* c, godot::Vector2 amount)
 {
 	c->set_position(c->get_position() + amount);
