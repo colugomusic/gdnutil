@@ -78,7 +78,11 @@ public:
 		make_more();
 
 		//godot::Godot::print("made a new instance");
-        return scene_->instance();
+		const auto out { scene_->instance() };
+
+		parent_node_->add_child(out);
+
+		return out;
     }
 
 	void make_more()
