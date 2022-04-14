@@ -23,7 +23,6 @@ class PackedScenePool : public godot::Node
 public:
 
     int min_size { 10 };
-    int max_size { 100 };
     int chunk_size { 1 };
     int fill_amount { 20 };
 
@@ -66,7 +65,7 @@ public:
 
             if (size_ < min_size)
             {
-				max_size *= 2;
+				min_size *= 2;
 				make_more();
             }
 
@@ -97,26 +96,9 @@ public:
 
     void free_scene(godot::Node* node)
     {
-        if (size_ >= max_size)
-        {
-            node->free();
-            return;
-        }
-
         add_to_pool(node);
 
 		//godot::Godot::print(godot::String("Returned a {0} instance to the pool [{1}]").format(godot::Array::make(pool_[0]->get_name(), size_)));
-    }
-
-    void queue_free_scene(godot::Node* node)
-    {
-        if (size_ >= max_size)
-        {
-            node->queue_free();
-            return;
-        }
-
-		call_deferred("free_scene", node);
     }
 
 private:
