@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <deque>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -28,8 +29,12 @@ public:
 	// these need to be provided
 	struct Config
 	{
-		std::function<void(Task)> push_parallel;
-		std::function<void()> process_parallel;
+		struct
+		{
+			std::function<void(Task)> push;
+			std::function<void()> process;
+		} parallel_processing;
+
 		std::string tag; // For debugging
 		godot::Node* parent_node {};
 	};
@@ -61,7 +66,7 @@ private:
 
 	std::thread::id main_thread_;
 	std::map<int64_t, Task> serial_tasks_;
-	std::vector<Task> serial_tasks_no_id_;
+	std::deque<Task> serial_tasks_no_id_;
 	std::function<void()> on_tree_exiting_;
 	Config config_;
 
@@ -103,8 +108,8 @@ inline auto TaskProcessorNode::push(Task task, int64_t id) -> void
 	}
 	else
 	{
-		assert(config_.push_parallel && "Pushing tasks from another thread is not supported by this task processor!");
-		config_.push_parallel(task);
+		assert(config_.parallel_processing.push && "Pushing tasks from another thread is not supported by this task processor!");
+		config_.parallel_processing.push(task);
 	}
 }
 
@@ -137,19 +142,34 @@ inline auto TaskProcessorNode::_process([[maybe_unused]] float delta) -> void
 
 	process_serial();
 
-	if (config_.process_parallel)
+	if (config_.parallel_processing.process)
 	{
-		config_.process_parallel();
+		config_.parallel_processing.process();
 	}
 }
 
 inline auto TaskProcessorNode::process_serial() -> void
 {
-	for (auto& [id, task] : serial_tasks_) task();
-	for (auto& task : serial_tasks_no_id_) task();
+	std::vector<int64_t> tasks_to_process;
 
-	serial_tasks_.clear();
-	serial_tasks_no_id_.clear();
+	for (auto& [id, task] : serial_tasks_)
+	{
+		tasks_to_process.push_back(id);
+	}
+
+	const auto no_id_tasks_to_process { serial_tasks_no_id_.size() };
+
+	for (auto id : tasks_to_process)
+	{
+		serial_tasks_[id]();
+		serial_tasks_.erase(id);
+	}
+
+	for (auto i {0}; i < no_id_tasks_to_process; i++)
+	{
+		serial_tasks_no_id_.front()();
+		serial_tasks_no_id_.pop_front();
+	}
 }
 
 // Default processor does not support pushing tasks from
