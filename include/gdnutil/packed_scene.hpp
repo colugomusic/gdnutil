@@ -18,7 +18,7 @@ public:
 
 	auto instance() const
 	{
-		return Object::cast_to<T>(scene_->instance());
+		return godot::Object::cast_to<T>(scene_->instance());
 	}
 
 private:
