@@ -109,6 +109,7 @@ inline auto TaskProcessorNode::push(Task task, int64_t id) -> void
 	else
 	{
 		assert(config_.parallel_processing.push && "Pushing tasks from another thread is not supported by this task processor!");
+
 		config_.parallel_processing.push(task);
 	}
 }
