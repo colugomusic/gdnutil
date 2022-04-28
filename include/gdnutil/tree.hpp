@@ -1,14 +1,12 @@
 #pragma once
 
 #include <memory>
-
-#pragma warning(push, 0)
 #include <Engine.hpp>
+#include <Godot.hpp>
 #include <Node.hpp>
 #include <Object.hpp>
 #include <SceneTree.hpp>
 #include <Viewport.hpp>
-#pragma warning(pop)
 
 namespace gdn {
 namespace tree {
