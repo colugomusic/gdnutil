@@ -189,10 +189,11 @@ public:
 	auto start() -> void;
 	auto push(Task task, int64_t id = -1) -> void;
 
+	Config config_;
+
 private:
 
 	TaskProcessorNode* node_ {};
-	Config config_;
 };
 
 inline TaskProcessor::TaskProcessor(Config config)
