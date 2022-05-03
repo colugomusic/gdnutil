@@ -187,9 +187,19 @@ inline void set_width(godot::Control* c, float width)
 	c->set_size({ width, c->get_size().height });
 }
 
+inline void set_minimum_width(godot::Control* c, float width)
+{
+	c->set_custom_minimum_size({ width, c->get_custom_minimum_size().height });
+}
+
 inline void set_height(godot::Control* c, float height)
 {
 	c->set_size({ c->get_size().width, height });
+}
+
+inline void set_minimum_height(godot::Control* c, float height)
+{
+	c->set_custom_minimum_size({ c->get_custom_minimum_size().width, height });
 }
 
 inline void set_x(godot::Control* c, float x)
