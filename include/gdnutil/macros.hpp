@@ -1,8 +1,6 @@
 #pragma once
 
-#pragma warning(push, 0)
 #include <Godot.hpp>
-#pragma warning(pop)
 
 #define GDN_REG_METHOD(Name) register_method(#Name, &GDN_THIS_CLASS::Name)
 #define GDN_REG_REMOTE_METHOD(Name) register_method("REMOTE_"#Name, &GDN_THIS_CLASS::_REMOTE_##Name, godot_method_rpc_mode::GODOT_METHOD_RPC_MODE_REMOTE)
