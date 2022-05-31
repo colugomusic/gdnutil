@@ -147,6 +147,11 @@ inline void set_y(godot::Control* c, float y)
 
 namespace rect {
 
+inline auto bottom(const godot::Rect2& r)
+{
+	return r.position.y + r.size.height;
+}
+
 inline auto right(const godot::Rect2& r)
 {
 	return r.position.x + r.size.width;
