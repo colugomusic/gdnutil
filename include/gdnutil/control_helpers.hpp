@@ -162,6 +162,14 @@ inline auto top_right(const godot::Rect2& r)
 	return r.position + godot::Vector2 { r.size.width, 0.0f };
 }
 
+inline auto add(godot::Rect2 a, godot::Rect2 b)
+{
+	a.size += b.size;
+	a.position += b.position;
+
+	return a;
+}
+
 } // rect
 
 inline void nudge(godot::Control* c, godot::Vector2 amount)
