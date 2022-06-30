@@ -77,10 +77,22 @@ public:
 
 	using Task = detail::OncePerFrame::Task;
 
-	OncePerFrame(Task task)
+	OncePerFrame()
 	{
 		impl_.instance();
+	}
+
+	OncePerFrame(Task task)
+		: OncePerFrame{}
+	{
 		impl_->set_task(task);
+	}
+
+	auto operator=(Task task) -> OncePerFrame&
+	{
+		impl_->set_task(task);
+
+		return *this;
 	}
 
 	auto operator()() -> void
