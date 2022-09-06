@@ -1,145 +1,131 @@
 #pragma once
 
+#include <cassert>
 #include <vector>
 
 #pragma warning(push, 0)
-#include <Array.hpp>
-#include <Array.hpp>
-#include <Godot.hpp>
 #include <Node.hpp>
 #include <PackedScene.hpp>
 #include <ResourceLoader.hpp>
 #include <String.hpp>
 #pragma warning(pop)
 
-#include "macros.hpp"
-
 namespace gdn {
 
-class PackedScenePool : public godot::Node
+//
+// NOTE
+//
+// The accepted position in the Godot community is
+// apparently that scene pooling is not necessary
+// because instancing is already "fast enough".
+//
+// Here are some situations where this is not true:
+//
+// 1.
+// Scenes which contain Viewport nodes are very slow
+// to load (I guess because they allocate memory up
+// front even before they are used at all.)
+//
+// 2.
+// Any scene which does anything interesting when it
+// is added to the scene tree (i.e. in the _ready()
+// method), could take an arbitrary amount of time
+// to execute and therefore could benefit from
+// pooling.
+// 
+template <typename NodeType = godot::Node>
+class PackedScenePool
 {
-    GDN_CLASS(PackedScenePool, godot::Node);
-
 public:
 
-    int min_size { 10 };
-    int chunk_size { 1 };
-    int fill_amount { 20 };
-
-    static void _register_methods()
+    struct Config
     {
-        GDN_REG_METHOD(_process);
-        GDN_REG_METHOD(_ready);
-        GDN_REG_METHOD(free_scene);
+        // Node to add the instanced scenes to. Can be null
+        godot::Node* scene_parent_node{};
+
+        // Resource path to scene
+        godot::String scene_path;
+
+        // Initial target pool size
+		uint32_t initial_size { 10 };
+    };
+
+    PackedScenePool(Config config)
+        : scene_ { godot::ResourceLoader::get_singleton()->load(config.scene_path) }
+        , scene_parent_node_ { config.scene_parent_node }
+        , target_size_ { config.initial_size }
+    {
+        assert (scene_.is_valid());
     }
 
-    void _init()
+    auto acquire() -> NodeType*
     {
-    }
+        assert (scene_.is_valid());
 
-    void _ready()
-    {
-		make_more();
-    }
-
-	void set_parent_node(godot::Node* node)
-	{
-		parent_node_ = node;
-	}
-
-    void set_scene(godot::Ref<godot::PackedScene> scene)
-    {
-        scene_ = scene;
-    }
-
-    void set_scene(godot::NodePath path)
-    {
-        set_scene(godot::ResourceLoader::get_singleton()->load(path));
-    }
-
-    godot::Node* instance()
-    {
-        if (size_ > 0)
+        if (++acquire_count_ > target_size_ / 2)
         {
-            size_--;
-
-            if (size_ < min_size)
-            {
-				min_size *= 2;
-				make_more();
-            }
-
-			//godot::Godot::print(godot::String("Got a {0} instance from the pool [{1}]").format(godot::Array::make(pool_[0]->get_name(), size_)));
-
-			return pool_[size_];
+            increase_target_size();
         }
 
-		make_more();
+        if (pool_.empty())
+        {
+            return make_new_instance();
+        }
 
-		//godot::Godot::print("made a new instance");
-		const auto out { scene_->instance() };
+        const auto out { pool_.back() };
 
-		parent_node_->add_child(out);
+        pool_.pop_back();
 
 		return out;
     }
 
-	void make_more()
-	{
-		if (scene_.is_null()) return;
-		if (fill_remaining_ > 0) return;
-
-		//godot::Godot::print("making more instances...");
-		fill_remaining_ += fill_amount;
-		set_process(true);
-	}
-
-    void free_scene(godot::Node* node)
+    auto release(NodeType* node) -> void
     {
-        add_to_pool(node);
+        acquire_count_--;
+		pool_.push_back(node);
 
-		//godot::Godot::print(godot::String("Returned a {0} instance to the pool [{1}]").format(godot::Array::make(pool_[0]->get_name(), size_)));
+        assert (acquire_count_ >= 0);
+    }
+
+    // If you call this from time to time then
+    // the scene pool will refill itself
+    auto process(int chunk_size = 1) -> void
+    {
+        while (chunk_size-- > 0)
+        {
+            if (pool_.size() >= target_size_) return;
+
+            pool_.push_back(make_new_instance());
+        }
     }
 
 private:
 
-    void _process([[maybe_unused]] float delta)
+	auto increase_target_size() -> void
     {
-        for (int i = 0; i < chunk_size; i++)
-        {
-			const auto node { scene_->instance() };
-
-			parent_node_->add_child(node);
-
-            add_to_pool(node);
-        }
-
-		//godot::Godot::print(godot::String("Added {0} new '{1}' instances to the pool [{2}]").format(godot::Array::make(chunk_size, pool_[0]->get_name(), size_)));
-
-		fill_remaining_ -= chunk_size;
-
-        if (fill_remaining_ <= 0)
-        {
-            set_process(false);
-        }
+        set_target_size(target_size_ * 2);
     }
 
-    void add_to_pool(godot::Node* node)
+    auto make_new_instance() -> NodeType*
     {
-		while (pool_.size() < size_ + 1)
-		{
-            pool_.resize(pool_.size() + chunk_size);
-		}
+		const auto out { scene_->instance() };
 
-        pool_[size_++] = node;
+		if (scene_parent_node_) scene_parent_node_->add_child(out);
+
+		return godot::Object::cast_to<NodeType>(out);
+    }
+
+    auto set_target_size(uint32_t size) -> void
+    {
+        target_size_ = size;
+        pool_.reserve(size);
     }
 
     godot::Ref<godot::PackedScene> scene_;
-    std::vector<godot::Node*> pool_;
-
-	godot::Node* parent_node_ { this };
-    int size_ {};
-    int fill_remaining_ {};
+    std::vector<NodeType*> pool_;
+    godot::Node* scene_parent_node_{};
+    uint32_t target_size_;
+    uint32_t acquire_count_{0};
 };
 
 } // gdn
