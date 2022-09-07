@@ -20,17 +20,18 @@ class GenericPlaceholder
 public:
 
 	GenericPlaceholder() = default;
-
 	GenericPlaceholder(godot::Node* parent, godot::NodePath path)
 		: parent_(parent)
 		, path_(path)
 		, node_(tree::get<godot::InstancePlaceholder>(parent, path))
 	{
 	}
+
+	operator bool() const { return parent_; }
 	
-	bool instance()
+	auto instance() -> bool
 	{
-		const auto placeholder = get<godot::InstancePlaceholder>();
+		const auto placeholder { get<godot::InstancePlaceholder>() };
 
 		if (placeholder)
 		{
@@ -38,62 +39,78 @@ public:
 
 			node_ = parent_->get_node(path_);
 
-			for (const auto func : on_instanced)
-			{
-				func();
-			}
-
 			return true;
 		}
 
 		return false;
 	}
 
-	bool is_instanced() const
+	auto is_instanced() const -> bool
 	{
 		return node_ && !get<godot::InstancePlaceholder>();
 	}
 
-	template <class T> T* get() const
+	template <class T> auto get() const -> T*
 	{
 		return godot::Object::cast_to<T>(node_);
 	}
 
-	std::vector<std::function<void()>> on_instanced;
-
 private:
 
-	godot::Node* parent_ = nullptr;
-	godot::NodePath path_;
-	godot::Node* node_ = nullptr;
+	godot::Node* parent_{};
+	godot::NodePath path_{};
+	godot::Node* node_{};
 };
 
-template <class T>
-class Placeholder : public GenericPlaceholder
+struct NoPlaceholderNotifyPolicy
+{
+	auto notify_instanced() -> void {}
+};
+
+struct OnInstancedPlaceholderNotifyPolicy
+{
+	auto notify_instanced() -> void
+	{
+		for (const auto func : on_instanced)
+		{
+			func();
+		}
+	}
+
+	std::vector<std::function<void()>> on_instanced;
+};
+
+template <class T, class NotifyPolicy = NoPlaceholderNotifyPolicy>
+class Placeholder : public GenericPlaceholder, public NotifyPolicy
 {
 public:
 
 	Placeholder() = default;
-
 	Placeholder(godot::Node* parent, godot::NodePath path)
 		: GenericPlaceholder(parent, path)
 	{
 	}
 
-	T* get() const
-	{
-		return GenericPlaceholder::get<T>();
-	}
+	template <class U, class N>
+	Placeholder(const Placeholder<U, N>& rhs) : GenericPlaceholder{ rhs } {}
 
-	T* operator->() const
-	{
-		return get();
-	}
+	auto get() const { return GenericPlaceholder::get<T>(); }
+	auto operator->() const { return get(); }
+	auto& operator*() const { return *(get()); }
 
-	T& operator*() const
+	auto instance() -> bool
 	{
-		return *(get());
+		if (GenericPlaceholder::instance())
+		{
+			NotifyPolicy::notify_instanced();
+
+			return true;
+		}
+
+		return false;
 	}
 };
+
+template <class T> using NotifyingPlaceholder = Placeholder<T, OnInstancedPlaceholderNotifyPolicy>;
 
 } // gdn

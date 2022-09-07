@@ -48,32 +48,34 @@ public:
 	}
 };
 
-template <class T>
-class PlaceholderControl : public GenericPlaceholderControl
+template <class T, class NotifyPolicy = NoPlaceholderNotifyPolicy>
+class PlaceholderControl : public GenericPlaceholderControl, public NotifyPolicy
 {
 public:
 
 	PlaceholderControl() = default;
+	PlaceholderControl(godot::Node* parent, godot::NodePath path) : GenericPlaceholderControl(parent, path) {}
 
-	PlaceholderControl(godot::Node* parent, godot::NodePath path)
-		: GenericPlaceholderControl(parent, path)
-	{
-	}
+	template <class U, class N>
+	PlaceholderControl(const PlaceholderControl<U, N>& rhs) : GenericPlaceholderControl{ rhs } {}
 
-	T* get() const
-	{
-		return GenericPlaceholderControl::get<T>();
-	}
+	auto get() const { return GenericPlaceholderControl::get<T>(); }
+	auto operator->() const { return get(); }
+	auto& operator*() const { return *(get()); }
 
-	T* operator->() const
+	auto instance() -> bool
 	{
-		return get();
-	}
+		if (GenericPlaceholder::instance())
+		{
+			NotifyPolicy::notify_instanced();
 
-	T& operator*() const
-	{
-		return *(get());
+			return true;
+		}
+
+		return false;
 	}
 };
+
+template <class T> using NotifyingPlaceholderControl = PlaceholderControl<T, OnInstancedPlaceholderNotifyPolicy>;
 
 } // gdn
