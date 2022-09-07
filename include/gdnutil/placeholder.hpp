@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 #pragma warning(push, 0)
@@ -21,9 +22,9 @@ public:
 
 	GenericPlaceholder() = default;
 	GenericPlaceholder(godot::Node* parent, godot::NodePath path)
-		: parent_(parent)
-		, path_(path)
-		, node_(tree::get<godot::InstancePlaceholder>(parent, path))
+		: parent_{ parent }
+		, path_{ path }
+		, node_{ std::make_shared<godot::Node*>(tree::get<godot::InstancePlaceholder>(parent, path)) }
 	{
 	}
 
@@ -37,7 +38,7 @@ public:
 		{
 			placeholder->replace_by_instance();
 
-			node_ = parent_->get_node(path_);
+			*node_ = parent_->get_node(path_);
 
 			return true;
 		}
@@ -47,19 +48,21 @@ public:
 
 	auto is_instanced() const -> bool
 	{
-		return node_ && !get<godot::InstancePlaceholder>();
+		return node_ && *node_ && !get<godot::InstancePlaceholder>();
 	}
 
 	template <class T> auto get() const -> T*
 	{
-		return godot::Object::cast_to<T>(node_);
+		if (!node_) return nullptr;
+
+		return godot::Object::cast_to<T>(*node_);
 	}
 
 private:
 
 	godot::Node* parent_{};
 	godot::NodePath path_{};
-	godot::Node* node_{};
+	std::shared_ptr<godot::Node*> node_{};
 };
 
 struct NoPlaceholderNotifyPolicy
@@ -71,13 +74,22 @@ struct OnInstancedPlaceholderNotifyPolicy
 {
 	auto notify_instanced() -> void
 	{
-		for (const auto func : on_instanced)
+		for (const auto func : *on_instanced_)
 		{
 			func();
 		}
 	}
 
-	std::vector<std::function<void()>> on_instanced;
+	auto observe_instanced(std::function<void()> task) -> void
+	{
+		on_instanced_->push_back(task);
+	}
+
+private:
+
+	using OnInstancedTasks = std::vector<std::function<void()>>;
+
+	std::shared_ptr<OnInstancedTasks> on_instanced_ { std::make_shared<OnInstancedTasks>() };
 };
 
 template <class T, class NotifyPolicy = NoPlaceholderNotifyPolicy>
@@ -93,6 +105,10 @@ public:
 
 	template <class U, class N>
 	Placeholder(const Placeholder<U, N>& rhs) : GenericPlaceholder{ rhs } {}
+
+	template <class U>
+	Placeholder(const Placeholder<U, NotifyPolicy>& rhs) : GenericPlaceholder{ rhs }, NotifyPolicy{ rhs } {}
+
 
 	auto get() const { return GenericPlaceholder::get<T>(); }
 	auto operator->() const { return get(); }

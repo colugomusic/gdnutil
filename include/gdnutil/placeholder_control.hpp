@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include "placeholder.hpp"
 
 namespace gdn {
@@ -16,7 +17,13 @@ public:
 
 	bool is_visible() const
 	{
-		return is_instanced() && get<godot::Control>()->is_visible();
+		if (!is_instanced()) return false;
+
+		const auto control { get<godot::Control>() };
+
+		assert (control);
+
+		return control->is_visible();
 	}
 	
 	bool set_visible(bool yes)
@@ -59,6 +66,9 @@ public:
 	template <class U, class N>
 	PlaceholderControl(const PlaceholderControl<U, N>& rhs) : GenericPlaceholderControl{ rhs } {}
 
+	template <class U>
+	PlaceholderControl(const PlaceholderControl<U, NotifyPolicy>& rhs) : GenericPlaceholderControl{ rhs }, NotifyPolicy{ rhs } {}
+
 	auto get() const { return GenericPlaceholderControl::get<T>(); }
 	auto operator->() const { return get(); }
 	auto& operator*() const { return *(get()); }
@@ -66,6 +76,18 @@ public:
 	auto instance() -> bool
 	{
 		if (GenericPlaceholder::instance())
+		{
+			NotifyPolicy::notify_instanced();
+
+			return true;
+		}
+
+		return false;
+	}
+
+	auto set_visible(bool yes) -> bool
+	{
+		if (GenericPlaceholderControl::set_visible(yes))
 		{
 			NotifyPolicy::notify_instanced();
 
