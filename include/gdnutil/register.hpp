@@ -1,16 +1,16 @@
 #pragma once
 
-#pragma warning(push, 0)
 #include <Godot.hpp>
-#pragma warning(pop)
 
 #include "once_per_frame.hpp"
+#include "process_when_visible.hpp"
 
 namespace gdn {
 
 static void register_classes()
 {
 	godot::register_class<detail::OncePerFrame>();
+	godot::register_class<ProcessWhenVisible>();
 }
 
 } // gdn
