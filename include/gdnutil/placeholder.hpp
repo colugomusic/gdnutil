@@ -67,22 +67,26 @@ private:
 
 struct NoPlaceholderNotifyPolicy
 {
+protected:
+
 	auto notify_instanced() -> void {}
 };
 
 struct OnInstancedPlaceholderNotifyPolicy
 {
+	auto observe_instanced(std::function<void()> task) -> void
+	{
+		on_instanced_->push_back(task);
+	}
+
+protected:
+
 	auto notify_instanced() -> void
 	{
 		for (const auto func : *on_instanced_)
 		{
 			func();
 		}
-	}
-
-	auto observe_instanced(std::function<void()> task) -> void
-	{
-		on_instanced_->push_back(task);
 	}
 
 private:
@@ -108,7 +112,6 @@ public:
 
 	template <class U>
 	Placeholder(const Placeholder<U, NotifyPolicy>& rhs) : GenericPlaceholder{ rhs }, NotifyPolicy{ rhs } {}
-
 
 	auto get() const { return GenericPlaceholder::get<T>(); }
 	auto operator->() const { return get(); }
