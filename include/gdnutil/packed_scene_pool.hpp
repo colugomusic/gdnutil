@@ -58,6 +58,20 @@ public:
         assert (scene_.is_valid());
     }
 
+    ~PackedScenePool()
+    {
+        if (scene_parent_node_)
+        {
+            // Scenes will be freed automatically by Godot
+            return;
+        }
+
+        for (auto node : pool_)
+        {
+            node->free();
+        }
+    }
+
     auto acquire() -> NodeType*
     {
         assert (scene_.is_valid());
@@ -81,6 +95,16 @@ public:
 
     auto release(NodeType* node) -> void
     {
+        if (!scene_parent_node_)
+        {
+			const auto parent { node->get_parent() };
+
+            if (parent)
+            {
+				parent->remove_child(node);
+            }
+        }
+
         acquire_count_--;
 		pool_.push_back(node);
 
@@ -98,6 +122,8 @@ public:
             pool_.push_back(make_new_instance());
         }
     }
+
+    auto get_pool_size() const { return pool_.size(); }
 
 private:
 
