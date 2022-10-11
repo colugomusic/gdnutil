@@ -239,7 +239,7 @@ static auto read_if_exists(godot::String key, godot::Dictionary data, std::optio
 	return detail::read_if_exists<T, detail::getter>(key, data, out);
 }
 
-template <typename T> auto from_string(godot::String str) -> T;
+template <typename T> static auto from_string(godot::String str) -> T;
 template <> auto from_string<int64_t>(godot::String str) -> int64_t
 {
 	assert (str.is_valid_integer());
