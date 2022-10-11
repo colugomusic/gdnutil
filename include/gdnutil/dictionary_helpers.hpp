@@ -23,7 +23,7 @@ template <> struct get_type_id<godot::String>{ static constexpr auto value { god
 template <typename T>
 struct get_json_type_id
 {
-	static constexpr auto value { get_type_id<T>::value; };
+	static constexpr auto value { get_type_id<T>::value };
 };
 
 template <> struct get_json_type_id<int32_t>{ static constexpr auto value { get_type_id<float>::value }; };
@@ -32,6 +32,24 @@ template <> struct get_json_type_id<uint32_t>{ static constexpr auto value { get
 
 template <typename T, typename Data>
 inline auto decode(Data data) -> T;
+
+template <>
+inline auto decode<godot::Color, godot::Array>(godot::Array data) -> godot::Color
+{
+	godot::Color out;
+
+	assert (data[0].get_type() == godot::Variant::REAL);
+	assert (data[1].get_type() == godot::Variant::REAL);
+	assert (data[2].get_type() == godot::Variant::REAL);
+	assert (data[3].get_type() == godot::Variant::REAL);
+
+	out.r = data[0];
+	out.g = data[1];
+	out.b = data[2];
+	out.a = data[3];
+
+	return out;
+}
 
 template <>
 inline auto decode<godot::Transform2D, godot::Array>(godot::Array data) -> godot::Transform2D
@@ -48,10 +66,131 @@ inline auto decode<godot::Transform2D, godot::Array>(godot::Array data) -> godot
 	return out;
 }
 
+namespace detail {
+
+struct getter
+{
+	template <typename T>
+	static auto get(godot::Dictionary data, godot::String key) -> T
+	{
+		assert (data[key].get_type() == get_type_id<T>::value);
+
+		return data[key];
+	}
+
+	template <typename T>
+	static auto get(godot::Array array, int index) -> T
+	{
+		assert (array[index].get_type() == get_type_id<T>::value);
+
+		return array[index];
+	}
+};
+
+struct json_getter
+{
+	template <typename T>
+	static auto get(godot::Dictionary data, godot::String key) -> T
+	{
+		assert (data[key].get_type() == get_json_type_id<T>::value);
+
+		return data[key];
+	}
+
+	template <typename T>
+	static auto get(godot::Array array, int index) -> T
+	{
+		assert (array[index].get_type() == get_json_type_id<T>::value);
+
+		return array[index];
+	}
+};
+
+template <typename Getter>
+struct special_getter
+{
+	template <typename T>
+	static auto get(godot::Dictionary data, godot::String key) -> T
+	{
+		return Getter{}.get<T>(data, key);
+	}
+
+	template <typename T>
+	static auto get(godot::Array array, int index) -> T
+	{
+		return Getter{}.get<T>(array, index);
+	}
+
+	template <>
+	static auto get<godot::Color>(godot::Dictionary data, godot::String key) -> godot::Color
+	{
+		return gdn::decode<godot::Color>(get<godot::Array>(data, key));
+	}
+
+	template <>
+	static auto get<godot::Transform2D>(godot::Dictionary data, godot::String key) -> godot::Transform2D
+	{
+		return gdn::decode<godot::Transform2D>(get<godot::Array>(data, key));
+	}
+};
+
+template <typename T, typename Getter>
+static auto get(godot::Dictionary data, godot::String key) -> T
+{
+	return special_getter<Getter>{}.get<T>(data, key);
+}
+
+template <typename T, typename Getter>
+static auto get(godot::Array array, int index) -> T
+{
+	return special_getter<Getter>{}.get<T>(array, index);
+}
+
+template <typename T, typename Getter>
+static auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void
+{
+	if (data.has(key))
+	{
+		*out = get<T, Getter>(data, key);
+	}
+}
+
+template <typename T, typename Getter>
+static auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void
+{
+	if (data.has(key))
+	{
+		*out = get<T, Getter>(data, key);
+	}
+}
+
+template <typename T, typename Visitor, typename Getter>
+static auto visit_array(godot::Array array, Visitor visitor) -> void
+{
+	for (int i = 0; i < array.size(); i++)
+	{
+		visitor(get<T, Getter>(array, i));
+	}
+}
+
+} // detail
+
 template <typename T>
 inline auto encode(T value) -> T
 {
 	return value;
+}
+
+inline auto encode(godot::Color color) -> godot::Array
+{
+	godot::Array out;
+
+	out.append(color.r);
+	out.append(color.g);
+	out.append(color.b);
+	out.append(color.a);
+
+	return out;
 }
 
 inline auto encode(godot::Transform2D xform) -> godot::Array
@@ -82,79 +221,27 @@ inline auto encode(const std::vector<T>& items) -> godot::Array
 }
 
 template <typename T>
-static auto json_get(godot::Dictionary data, godot::String key) -> T
-{
-	assert (data[key].get_type() == get_json_type_id<T>::value);
-
-	return static_cast<T>(data[key]);
-}
-
-template <typename T>
-static auto json_get(godot::Array array, int index) -> T
-{
-	assert (array[index].get_type() == get_json_type_id<T>::value);
-
-	return static_cast<T>(array[index]);
-}
-
-template <typename T>
 static auto get(godot::Dictionary data, godot::String key) -> T
 {
-	assert (data[key].get_type() == get_type_id<T>::value);
-
-	return data[key];
-}
-
-template <>
-static auto get<godot::Transform2D>(godot::Dictionary data, godot::String key) -> godot::Transform2D
-{
-	return gdn::decode<godot::Transform2D>(get<godot::Array>(data, key));
+	return detail::get<T, detail::getter>(data, key);
 }
 
 template <typename T>
 static auto get(godot::Array array, int index) -> T
 {
-	assert (array[index].get_type() == get_type_id<T>::value);
-
-	return array[index];
+	return detail::get<T, detail::getter>(array, index);
 }
 
 template <typename T>
 static auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void
 {
-	if (data.has(key))
-	{
-		*out = get<T>(data, key);
-	}
+	return detail::read_if_exists<T, detail::getter>(key, data, out);
 }
 
 template <typename T>
 static auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void
 {
-	if (data.has(key))
-	{
-		*out = get<T>(data, key);
-	}
-}
-
-template <typename Visitor>
-static auto visit_array_of_dictionaries(godot::Array array, Visitor visitor) -> void
-{
-	for (int i = 0; i < array.size(); i++)
-	{
-		visitor(gdn::get<Dictionary>(array, i));
-	}
-}
-
-template <typename T, typename Visitor>
-static auto visit_array(godot::Array array, Visitor visitor) -> void
-{
-	for (int i = 0; i < array.size(); i++)
-	{
-		assert (get_type_id<T>::value == array[i].get_type());
-
-		visitor(T(array[i]));
-	}
+	return detail::read_if_exists<T, detail::getter>(key, data, out);
 }
 
 template <typename T> static auto from_string(godot::String str) -> T;
@@ -165,21 +252,10 @@ template <> static auto from_string<int64_t>(godot::String str) -> int64_t
 	return str.to_int();
 }
 
-template <typename KeyType, typename ValueType, typename Visitor>
-static auto visit_json_dictionary_items(godot::Dictionary d, Visitor visitor) -> void
+template <typename T, typename Visitor>
+static auto visit_array(godot::Array array, Visitor visitor) -> void
 {
-	const auto keys { d.keys() };
-
-	for (int i = 0; i < keys.size(); i++)
-	{
-		const auto key { keys[i] };
-		const auto value { d[key] };
-
-		assert (get_type_id<godot::String>::value == key.get_type());
-		assert (get_type_id<ValueType>::value == value.get_type());
-
-		visitor(from_string<KeyType>(key), value);
-	}
+	return detail::visit_array<T, Visitor, detail::json_getter>(array, visitor);
 }
 
 template <typename KeyType, typename ValueType, typename Visitor>
@@ -233,4 +309,54 @@ static auto write_if_has_value(godot::String key, godot::Dictionary value, godot
 	}
 }
 
+namespace json {
+
+template <typename T>
+static auto get(godot::Dictionary data, godot::String key) -> T
+{
+	return detail::get<T, detail::json_getter>(data, key);
+}
+
+template <typename T>
+static auto get(godot::Array array, int index) -> T
+{
+	return detail::get<T, detail::json_getter>(array, index);
+}
+
+template <typename T>
+static auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void
+{
+	return detail::read_if_exists<T, detail::json_getter>(key, data, out);
+}
+
+template <typename T>
+static auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void
+{
+	return detail::read_if_exists<T, detail::json_getter>(key, data, out);
+}
+
+template <typename T, typename Visitor>
+static auto visit_array(godot::Array array, Visitor visitor) -> void
+{
+	return detail::visit_array<T, Visitor, detail::json_getter>(array, visitor);
+}
+
+template <typename KeyType, typename ValueType, typename Visitor>
+static auto visit_dictionary_items(godot::Dictionary d, Visitor visitor) -> void
+{
+	const auto keys { d.keys() };
+
+	for (int i = 0; i < keys.size(); i++)
+	{
+		const auto key { keys[i] };
+		const auto value { d[key] };
+
+		assert (get_type_id<godot::String>::value == key.get_type());
+		assert (get_type_id<ValueType>::value == value.get_type());
+
+		visitor(from_string<KeyType>(key), value);
+	}
+}
+
+} // json
 } // gdn
