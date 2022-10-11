@@ -106,44 +106,39 @@ struct json_getter
 	}
 };
 
-template <typename Getter>
-struct special_getter
+template <typename T> struct identity { using type = T; };
+
+template <typename Getter, typename T>
+static auto get(godot::Dictionary data, godot::String key, identity<T>) -> T
 {
-	template <typename T>
-	static auto get(godot::Dictionary data, godot::String key) -> T
-	{
-		return Getter{}.get<T>(data, key);
-	}
-
-	template <typename T>
-	static auto get(godot::Array array, int index) -> T
-	{
-		return Getter{}.get<T>(array, index);
-	}
-
-	template <>
-	static auto get<godot::Color>(godot::Dictionary data, godot::String key) -> godot::Color
-	{
-		return gdn::decode<godot::Color>(get<godot::Array>(data, key));
-	}
-
-	template <>
-	static auto get<godot::Transform2D>(godot::Dictionary data, godot::String key) -> godot::Transform2D
-	{
-		return gdn::decode<godot::Transform2D>(get<godot::Array>(data, key));
-	}
-};
-
-template <typename T, typename Getter>
-static auto get(godot::Dictionary data, godot::String key) -> T
-{
-	return special_getter<Getter>{}.get<T>(data, key);
+	return Getter{}.get<T>(data, key);
 }
 
 template <typename T, typename Getter>
 static auto get(godot::Array array, int index) -> T
 {
-	return special_getter<Getter>{}.get<T>(array, index);
+	return Getter{}.get<T>(array, index);
+}
+
+template <typename T, typename Getter>
+static auto get(godot::Dictionary data, godot::String key) -> T;
+
+template <typename Getter>
+static auto get(godot::Dictionary data, godot::String key, identity<godot::Color>) -> godot::Color
+{
+	return gdn::decode<godot::Color>(get<godot::Array, Getter>(data, key));
+}
+
+template <typename Getter>
+static auto get(godot::Dictionary data, godot::String key, identity<godot::Transform2D>) -> godot::Transform2D
+{
+	return gdn::decode<godot::Transform2D>(get<godot::Array, Getter>(data, key));
+}
+
+template <typename T, typename Getter>
+static auto get(godot::Dictionary data, godot::String key) -> T
+{
+	return get<Getter>(data, key, identity<T>{});
 }
 
 template <typename T, typename Getter>
