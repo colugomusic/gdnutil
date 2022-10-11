@@ -111,13 +111,13 @@ template <typename T> struct identity { using type = T; };
 template <typename Getter, typename T>
 static auto get(godot::Dictionary data, godot::String key, identity<T>) -> T
 {
-	return Getter{}.get<T>(data, key);
+	return Getter{}.template get<T>(data, key);
 }
 
 template <typename T, typename Getter>
 static auto get(godot::Array array, int index) -> T
 {
-	return Getter{}.get<T>(array, index);
+	return Getter{}.template get<T>(array, index);
 }
 
 template <typename T, typename Getter>
