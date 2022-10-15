@@ -26,7 +26,7 @@ public:
 		return control->is_visible();
 	}
 	
-	bool set_visible(bool yes)
+	virtual auto set_visible(bool yes) -> bool
 	{
 		const auto placeholder = get<godot::InstancePlaceholder>();
 
@@ -85,7 +85,7 @@ public:
 		return false;
 	}
 
-	auto set_visible(bool yes) -> bool
+	auto set_visible(bool yes) -> bool override
 	{
 		if (GenericPlaceholderControl::set_visible(yes))
 		{
