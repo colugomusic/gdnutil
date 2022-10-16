@@ -275,7 +275,7 @@ static auto write_if_not_default(godot::String key, T value, T default_value, go
 {
 	if (value != default_value)
 	{
-		(*data)[key] = value;
+		(*data)[key] = encode(value);
 	}
 }
 
@@ -284,7 +284,7 @@ static auto write_if_has_value(godot::String key, std::optional<T> value, godot:
 {
 	if (value)
 	{
-		(*data)[key] = *value;
+		(*data)[key] = encode(*value);
 	}
 }
 
