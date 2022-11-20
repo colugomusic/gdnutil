@@ -78,6 +78,12 @@ inline auto end(const godot::Control* c)
 
 namespace global {
 
+inline void set_rect(godot::Control* c, godot::Rect2 rect)
+{
+	c->set_global_position(rect.position);
+	c->set_size(rect.size);
+}
+
 inline auto top_left(const godot::Control* c)
 {
 	return c->get_global_position();
@@ -195,6 +201,12 @@ inline void set_self_opacity(godot::Control* c, float opacity)
 	c->set_self_modulate(modulate);
 }
 
+inline void set_rect(godot::Control* c, godot::Rect2 rect)
+{
+	c->set_position(rect.position);
+	c->set_size(rect.size);
+}
+
 inline void set_width(godot::Control* c, float width)
 {
 	c->set_size({ width, c->get_size().height });
@@ -230,4 +242,4 @@ inline void bring_to_front(godot::Control* c)
 	c->get_parent()->move_child(c, c->get_parent()->get_child_count());
 }
 
-} // color_util
+} // gdn
