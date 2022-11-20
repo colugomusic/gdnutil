@@ -11,6 +11,8 @@ class PackedScene
 {
 public:
 
+	PackedScene() = default;
+
 	PackedScene(godot::String path)
 		: scene_{ godot::ResourceLoader::get_singleton()->load(path) }
 	{
