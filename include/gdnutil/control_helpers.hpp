@@ -80,8 +80,8 @@ namespace global {
 
 inline void set_rect(godot::Control* c, godot::Rect2 rect)
 {
-	c->set_global_position(rect.position);
 	c->set_size(rect.size);
+	c->set_global_position(rect.position);
 }
 
 inline auto top_left(const godot::Control* c)
@@ -107,6 +107,11 @@ inline auto right(const godot::Control* c)
 inline auto center(const godot::Control* c)
 {
 	return c->get_global_position() + (c->get_size() * 0.5f);
+}
+
+inline auto left_middle(const godot::Control* c)
+{
+	return c->get_global_position() + godot::Vector2(0.0f, height(c) * 0.5f);
 }
 
 inline auto top_middle(const godot::Control* c)
@@ -203,8 +208,8 @@ inline void set_self_opacity(godot::Control* c, float opacity)
 
 inline void set_rect(godot::Control* c, godot::Rect2 rect)
 {
-	c->set_position(rect.position);
 	c->set_size(rect.size);
+	c->set_position(rect.position);
 }
 
 inline void set_width(godot::Control* c, float width)
