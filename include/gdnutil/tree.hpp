@@ -51,6 +51,26 @@ T* get(godot::NodePath path)
 }
 
 template <class T>
+T* require(godot::Node* parent, godot::NodePath path)
+{
+	const auto out { get<T>(parent, path) };
+
+	assert (out);
+
+	return out;
+}
+
+template <class T>
+T* require(godot::NodePath path)
+{
+	const auto out { get<T>(path) };
+
+	assert (out);
+
+	return out;
+}
+
+template <class T>
 T* autoload()
 {
 	return godot::Object::cast_to<T>(get(T::___get_class_name()));
