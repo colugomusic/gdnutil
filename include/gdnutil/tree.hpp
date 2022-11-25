@@ -52,6 +52,12 @@ T* get(godot::NodePath path)
 }
 
 template <class T>
+auto get(godot::Node* parent, godot::NodePath path, T** out) -> void
+{
+	*out = get<T>(parent, path);
+}
+
+template <class T>
 T* require(godot::Node* parent, godot::NodePath path)
 {
 	const auto out { get<T>(parent, path) };
@@ -69,6 +75,12 @@ T* require(godot::NodePath path)
 	assert (out);
 
 	return out;
+}
+
+template <class T>
+auto require(godot::Node* parent, godot::NodePath path, T** out) -> void
+{
+	*out = require<T>(parent, path);
 }
 
 template <class T>
