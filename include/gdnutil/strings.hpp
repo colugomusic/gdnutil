@@ -6,7 +6,30 @@ namespace gdn {
 
 namespace signal {
 
+STRING(about_to_show);
+STRING(button_down);
+STRING(color_changed);
+STRING(confirmed);
+STRING(draw);
+STRING(file_selected);
+STRING(files_selected);
+STRING(focus_entered);
+STRING(focus_exited);
+STRING(gui_input);
+STRING(id_pressed);
+STRING(item_rect_changed);
+STRING(minimum_size_changed);
+STRING(mouse_entered);
+STRING(mouse_exited);
+STRING(pressed);
+STRING(popup_hide);
 STRING(resized);
+STRING(text_changed);
+STRING(text_entered);
+STRING(timeout);
+STRING(tree_exiting);
+STRING(toggled);
+STRING(value_changed);
 STRING(visibility_changed);
 
 } // signal
