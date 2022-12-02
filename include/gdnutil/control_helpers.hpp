@@ -168,6 +168,11 @@ inline auto right(const godot::Rect2& r)
 	return r.position.x + r.size.width;
 }
 
+inline auto top(const godot::Rect2& r)
+{
+	return r.position.y;
+}
+
 inline auto top_right(const godot::Rect2& r)
 {
 	return r.position + godot::Vector2 { r.size.width, 0.0f };
