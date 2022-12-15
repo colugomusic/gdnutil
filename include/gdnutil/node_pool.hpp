@@ -22,7 +22,7 @@ public:
 	BaseNodePool(BaseNodePool<T>&& rhs) noexcept = default;
 	auto operator=(BaseNodePool<T>&& rhs) noexcept -> BaseNodePool& = default;
 
-	auto acquire() -> T*
+	auto acquire()
 	{
 		assert (parent_);
 
@@ -37,10 +37,10 @@ public:
 				setup_(parent_, node);
 			}
 
-			return node;
+			return std::make_pair(node, true);
 		}
 
-		return get_node();
+		return std::make_pair(get_node(), false);
 	}
 
 	auto release(T* node) -> void
@@ -143,7 +143,9 @@ public:
 
 			for (auto i{old_size}; i <= index; i++)
 			{
-				nodes_[i] = pool_.acquire();
+				const auto [node, created] = pool_.acquire();
+
+				nodes_[i] = node;
 			}
 		}
 
