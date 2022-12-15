@@ -29,6 +29,7 @@ STRING(text_entered);
 STRING(timeout);
 STRING(tree_exiting);
 STRING(toggled);
+STRING(tween_step);
 STRING(value_changed);
 STRING(visibility_changed);
 
