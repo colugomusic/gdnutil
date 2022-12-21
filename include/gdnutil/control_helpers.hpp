@@ -46,6 +46,11 @@ inline auto top_left(const godot::Control* c)
 	return c->get_position();
 }
 
+inline auto top_right(const godot::Control* c)
+{
+	return c->get_position() + godot::Vector2(width(c), 0.0f);
+}
+
 inline auto top_middle(const godot::Control* c)
 {
 	return c->get_position() + godot::Vector2(width(c) * 0.5f, 0.0f);
