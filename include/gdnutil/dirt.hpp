@@ -10,7 +10,7 @@ public:
 
 	Dirt() = default;
 
-	Dirt(godot::CanvasItem* parent)
+	explicit Dirt(godot::CanvasItem* parent)
 		: parent_{parent}
 	{
 	}
