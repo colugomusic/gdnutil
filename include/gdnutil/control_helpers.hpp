@@ -144,6 +144,11 @@ inline auto bottom_middle(const godot::Control* c)
 	return c->get_global_position() + godot::Vector2(width(c) * 0.5f, c->get_size().height);
 }
 
+inline auto bottom_right(const godot::Control* c)
+{
+	return c->get_global_position() + c->get_size();
+}
+
 inline auto end(const godot::Control* c)
 {
 	return c->get_global_position() + c->get_size();
