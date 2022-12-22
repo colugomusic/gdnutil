@@ -37,6 +37,7 @@ STRING(visibility_changed);
 
 namespace slot {
 
+STRING(grab_focus);
 STRING(update);
 
 } // slot
