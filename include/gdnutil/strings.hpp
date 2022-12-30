@@ -8,6 +8,7 @@ namespace signal {
 
 STRING(about_to_show);
 STRING(button_down);
+STRING(button_pressed);
 STRING(color_changed);
 STRING(confirmed);
 STRING(draw);
@@ -17,6 +18,7 @@ STRING(focus_entered);
 STRING(focus_exited);
 STRING(gui_input);
 STRING(id_pressed);
+STRING(item_edited);
 STRING(item_rect_changed);
 STRING(minimum_size_changed);
 STRING(mouse_entered);
