@@ -133,8 +133,24 @@ public:
 	NodeProvider(NodeProvider<Pool>&& rhs) noexcept = default;
 	auto operator=(NodeProvider<Pool>&& rhs) noexcept -> NodeProvider& = default;
 
+	auto at(int index) const -> typename Pool::node_type*
+	{
+		assert (index < nodes_.size());
+
+		if (nodes_.size() == 0)
+		{
+			int x =0;
+		}
+
+		return nodes_[index];
+	}
+
 	auto operator[](int index) -> typename Pool::node_type*
 	{
+		if (nodes_.size() == 0)
+		{
+			int x =0;
+		}
 		if (index >= nodes_.size())
 		{
 			const auto old_size{nodes_.size()};
@@ -151,6 +167,8 @@ public:
 
 		return nodes_[index];
 	}
+
+	auto& get_all_nodes() const { return nodes_; }
 
 private:
 
