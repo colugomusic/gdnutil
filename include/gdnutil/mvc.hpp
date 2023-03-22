@@ -49,7 +49,7 @@ public:
 
 	~Controller() {
 		if (view_->controller_ == static_cast<ControllerType*>(this)) {
-			view_->controller = nullptr;
+			view_->controller_ = nullptr;
 		}
 	}
 
