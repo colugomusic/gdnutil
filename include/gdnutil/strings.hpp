@@ -33,6 +33,7 @@ STRING(tree_exiting);
 STRING(toggled);
 STRING(tween_step);
 STRING(value_changed);
+STRING(value_changing);
 STRING(visibility_changed);
 
 } // signal
