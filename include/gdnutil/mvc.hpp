@@ -20,25 +20,69 @@ private:
 	std::array<bool, KeyType::N> values;
 };
 
-template <typename Model, typename View, typename Controller, typename DrawFlags>
-class ViewController
+template <typename ControllerType, typename ViewType>
+class Controller;
+
+template <typename Model, typename ViewType, typename ControllerType, typename DrawFlags>
+class MVC;
+
+template <typename ControllerType>
+class View
+{
+protected:
+	ControllerType* controller_{};
+
+	template <typename ControllerType, typename ViewType>
+	friend class Controller;
+
+	template <typename Model, typename ViewType, typename ControllerType, typename DrawFlags>
+	friend class MVC;
+};
+
+template <typename ControllerType, typename ViewType>
+class Controller
+{
+public:
+	Controller(ViewType* view)
+		: view_{view}
+	{}
+
+	~Controller() {
+		if (view_->controller_ == static_cast<ControllerType*>(this)) {
+			view_->controller = nullptr;
+		}
+	}
+
+	auto get_view() const -> ViewType* {
+		return view_;
+	}
+
+protected:
+	ViewType* view_{};
+};
+
+template <typename Model, typename ViewType, typename ControllerType, typename DrawFlags>
+class MVC
 {
 public:
 	static_assert (std::is_enum_v<DrawFlags>);
 
 	using draw_info_t = DrawInfo<DrawFlags>;
 
-	ViewController() = default;
-	ViewController(View* view, Controller* controller)
+	MVC() = default;
+	MVC(ViewType* view, ControllerType* controller)
 		: view_{view}
+		, controller_{controller}
 	{
-		view_->set_controller(controller);
+		view_->controller_ = controller;
 		draw_info_.set_all();
 	}
 
-	~ViewController()
+	~MVC()
 	{
-		view_->set_controller(nullptr);
+		if (view_->controller_ == controller_) {
+			view_->controller_ = nullptr;
+		}
 	}
 
 	auto draw() -> void
@@ -75,7 +119,8 @@ private:
 
 	Model model_;
 	Model viewed_model_{};
-	View* view_{};
+	ViewType* view_;
+	ControllerType* controller_;
 	draw_info_t draw_info_{};
 };
 
