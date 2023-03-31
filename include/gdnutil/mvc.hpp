@@ -32,10 +32,10 @@ class View
 protected:
 	ControllerType* controller_{};
 
-	template <typename ControllerType, typename ViewType>
+	template <typename ControllerType_, typename ViewType>
 	friend class Controller;
 
-	template <typename Model, typename ViewType, typename ControllerType, typename DrawFlags>
+	template <typename Model, typename ViewType, typename ControllerType_, typename DrawFlags>
 	friend class MVC;
 };
 
@@ -45,7 +45,9 @@ class Controller
 public:
 	Controller(ViewType* view)
 		: view_{view}
-	{}
+	{
+		view_->controller_ = static_cast<ControllerType*>(this);
+	}
 
 	~Controller() {
 		if (view_->controller_ == static_cast<ControllerType*>(this)) {
