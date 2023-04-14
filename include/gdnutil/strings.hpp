@@ -31,6 +31,7 @@ STRING(text_entered);
 STRING(timeout);
 STRING(tree_exiting);
 STRING(toggled);
+STRING(tween_all_completed);
 STRING(tween_step);
 STRING(value_changed);
 STRING(value_changing);
