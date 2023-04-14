@@ -29,6 +29,12 @@ class MVC;
 template <typename ControllerType>
 class View
 {
+public:
+	~View() {
+		if (controller_) {
+			controller_->clear_view();
+		}
+	}
 protected:
 	ControllerType* controller_{};
 
@@ -50,9 +56,13 @@ public:
 	}
 
 	~Controller() {
-		if (view_->controller_ == static_cast<ControllerType*>(this)) {
+		if (view_ && view_->controller_ == static_cast<ControllerType*>(this)) {
 			view_->controller_ = nullptr;
 		}
+	}
+
+	auto clear_view() {
+		view_ = nullptr;
 	}
 
 	auto get_view() const -> ViewType* {
@@ -82,9 +92,13 @@ public:
 
 	~MVC()
 	{
-		if (view_->controller_ == controller_) {
+		if (view_ && view_->controller_ == controller_) {
 			view_->controller_ = nullptr;
 		}
+	}
+
+	auto clear_view() {
+		view_ = nullptr;
 	}
 
 	auto draw() -> void
