@@ -10,20 +10,51 @@ namespace gdn {
 
 template <typename T, typename Script, typename ControlType>
 struct Scene {
-	ControlType* const root;
-	Script* const script;
+	using control_type = ControlType;
+	ControlType* root{nullptr};
+	Script* script{nullptr};
+	Scene() = default;
+	Scene(const Scene&) = delete;
+	auto operator=(const Scene&) -> Scene& = delete;
+	Scene(Scene&& rhs)
+		: root{rhs.root}
+		, script{rhs.script}
+		, owned_{rhs.owned_}
+	{
+		set_view(script, static_cast<T*>(this));
+		rhs.root = nullptr;
+		rhs.owned_ = false;
+	}
+	auto operator=(Scene&& rhs) -> Scene& {
+		root = rhs.root;
+		script = rhs.script;
+		owned_ = rhs.owned_;
+		set_view(script, static_cast<T*>(this));
+		rhs.root = nullptr;
+		rhs.owned_ = false;
+		return *this;
+	}
 	Scene(PackedScene<ControlType> packed_scene)
 		: root{packed_scene.instance()}
 		, script{godot::Object::cast_to<Script>(root)}
+		, owned_{true}
 	{
-		script->view = static_cast<T*>(this);
+		set_view(script, static_cast<T*>(this));
+	}
+	Scene(ControlType* node)
+		: root{node}
+		, script{godot::Object::cast_to<Script>(root)}
+	{
+		set_view(script, static_cast<T*>(this));
 	}
 	~Scene() {
-		root->free();
+		if (owned_) {
+			root->free();
+		}
 	}
-	Scene(const Scene&) = delete;
-	auto operator=(const Scene&) -> Scene& = delete;
+	operator bool() const { return root; }
 private:
+	bool owned_{false};
 };
 
 struct SceneHelper {
