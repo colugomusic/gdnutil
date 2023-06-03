@@ -120,58 +120,32 @@ private:
 };
 
 template <typename Pool>
-class NodeProvider
-{
+class NodeProvider {
 public:
-
 	template <typename... PoolArgs>
 	NodeProvider(godot::Node* parent, PoolArgs&&... pool_args)
 		: pool_{parent, std::forward<PoolArgs>(pool_args)...}
 	{}
-
 	NodeProvider() = default;
 	NodeProvider(NodeProvider<Pool>&& rhs) noexcept = default;
 	auto operator=(NodeProvider<Pool>&& rhs) noexcept -> NodeProvider& = default;
-
-	auto at(int index) const -> typename Pool::node_type*
-	{
+	auto at(int index) const -> typename Pool::node_type* {
 		assert (index < nodes_.size());
-
-		if (nodes_.size() == 0)
-		{
-			int x =0;
-		}
-
 		return nodes_[index];
 	}
-
-	auto operator[](int index) -> typename Pool::node_type*
-	{
-		if (nodes_.size() == 0)
-		{
-			int x =0;
-		}
-		if (index >= nodes_.size())
-		{
+	auto operator[](int index) -> typename Pool::node_type* {
+		if (index >= nodes_.size()) {
 			const auto old_size{nodes_.size()};
-
 			nodes_.resize(index + 1);
-
-			for (auto i{old_size}; i <= index; i++)
-			{
+			for (auto i{old_size}; i <= index; i++) {
 				const auto [node, created] = pool_.acquire();
-
 				nodes_[i] = node;
 			}
 		}
-
 		return nodes_[index];
 	}
-
 	auto& get_all_nodes() const { return nodes_; }
-
 private:
-
 	Pool pool_;
 	std::vector<typename Pool::node_type*> nodes_;
 };
