@@ -4,6 +4,7 @@
 #include <vector>
 #include <Node.hpp>
 #include "control_helpers.hpp"
+#include "macros.hpp"
 #include "packed_scene.hpp"
 
 namespace gdn {
@@ -22,7 +23,7 @@ struct Scene {
 		, script{rhs.script}
 		, owned_{rhs.owned_}
 	{
-		set_view(script, static_cast<T*>(this));
+		reinterpret_cast<Script<T, ControlType>*>(script)->view = static_cast<T*>(this);
 		rhs.root = nullptr;
 		rhs.owned_ = false;
 	}
@@ -30,7 +31,7 @@ struct Scene {
 		root = rhs.root;
 		script = rhs.script;
 		owned_ = rhs.owned_;
-		set_view(script, static_cast<T*>(this));
+		reinterpret_cast<Script<T, ControlType>*>(script)->view = static_cast<T*>(this);
 		rhs.root = nullptr;
 		rhs.owned_ = false;
 		return *this;
@@ -40,13 +41,13 @@ struct Scene {
 		, script{godot::Object::cast_to<ScriptType>(root)}
 		, owned_{true}
 	{
-		set_view(script, static_cast<T*>(this));
+		script->view = static_cast<T*>(this);
 	}
 	Scene(ControlType* node)
 		: root{node}
 		, script{godot::Object::cast_to<ScriptType>(root)}
 	{
-		set_view(script, static_cast<T*>(this));
+		script->view = static_cast<T*>(this);
 	}
 	~Scene() {
 		if (owned_) {
