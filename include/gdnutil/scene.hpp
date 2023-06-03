@@ -8,11 +8,12 @@
 
 namespace gdn {
 
-template <typename T, typename Script, typename ControlType>
+template <typename T, typename ControlType> struct Script;
+template <typename T, typename ScriptType, typename ControlType>
 struct Scene {
 	using control_type = ControlType;
 	ControlType* root{nullptr};
-	Script* script{nullptr};
+	ScriptType* script{nullptr};
 	Scene() = default;
 	Scene(const Scene&) = delete;
 	auto operator=(const Scene&) -> Scene& = delete;
@@ -36,14 +37,14 @@ struct Scene {
 	}
 	Scene(PackedScene<ControlType> packed_scene)
 		: root{packed_scene.instance()}
-		, script{godot::Object::cast_to<Script>(root)}
+		, script{godot::Object::cast_to<ScriptType>(root)}
 		, owned_{true}
 	{
 		set_view(script, static_cast<T*>(this));
 	}
 	Scene(ControlType* node)
 		: root{node}
-		, script{godot::Object::cast_to<Script>(root)}
+		, script{godot::Object::cast_to<ScriptType>(root)}
 	{
 		set_view(script, static_cast<T*>(this));
 	}
@@ -53,8 +54,23 @@ struct Scene {
 		}
 	}
 	operator bool() const { return root; }
+	static auto make() -> Scene {
+		Scene out{ScriptType::_new()};
+		out.owned_ = true;
+		return out;
+	}
 private:
 	bool owned_{false};
+	friend struct Script<T, ControlType>;
+};
+
+template <typename View, typename ControlType>
+struct Script : public ControlType {
+	auto _init() {}
+	~Script() {
+		view->owned_ = false;
+	}
+	View* view;
 };
 
 struct SceneHelper {
