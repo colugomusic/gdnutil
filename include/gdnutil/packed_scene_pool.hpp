@@ -2,13 +2,10 @@
 
 #include <cassert>
 #include <vector>
-
-#pragma warning(push, 0)
 #include <Node.hpp>
 #include <PackedScene.hpp>
 #include <ResourceLoader.hpp>
 #include <String.hpp>
-#pragma warning(pop)
 
 namespace gdn {
 
@@ -37,19 +34,15 @@ template <typename NodeType = godot::Node>
 class PackedScenePool
 {
 public:
-
-    struct Config
-    {
+    struct Config {
         // Node to add the instanced scenes to. Can be null
         godot::Node* scene_parent_node{};
-
         // Resource path to scene
         godot::String scene_path;
-
         // Initial target pool size
 		uint32_t initial_size { 10 };
     };
-
+    PackedScenePool() = default;
     PackedScenePool(Config config)
         : scene_ { godot::ResourceLoader::get_singleton()->load(config.scene_path) }
         , scene_parent_node_ { config.scene_parent_node }
@@ -57,100 +50,68 @@ public:
     {
         assert (scene_.is_valid());
     }
-
-    ~PackedScenePool()
-    {
-        if (scene_parent_node_)
-        {
+    ~PackedScenePool() {
+        if (scene_parent_node_) {
             // Scenes will be freed automatically by Godot
             return;
         }
-
-        for (auto node : pool_)
-        {
+        for (auto node : pool_) {
             node->free();
         }
     }
-
-    auto acquire() -> NodeType*
-    {
+    auto acquire() -> NodeType* {
         assert (scene_.is_valid());
-
-        if (++acquire_count_ > target_size_ / 2)
-        {
+        if (++acquire_count_ > target_size_ / 2) {
             increase_target_size();
         }
-
-        if (pool_.empty())
-        {
+        if (pool_.empty()) {
             return make_new_instance();
         }
-
         const auto out { pool_.back() };
-
         pool_.pop_back();
-
 		return out;
     }
-
-    auto release(NodeType* node) -> void
-    {
-        if (!scene_parent_node_)
-        {
+    auto release(NodeType* node) -> void {
+        if (!scene_parent_node_) {
 			const auto parent { node->get_parent() };
-
-            if (parent)
-            {
+            if (parent) {
 				parent->remove_child(node);
             }
         }
-
         acquire_count_--;
 		pool_.push_back(node);
-
         assert (acquire_count_ >= 0);
     }
-
     // If you call this from time to time then
     // the scene pool will refill itself
-    auto process(int chunk_size = 1) -> void
-    {
-        while (chunk_size-- > 0)
-        {
-            if (pool_.size() >= target_size_) return;
-
+    auto process(int chunk_size = 1) -> void {
+        while (chunk_size-- > 0) {
+            if (pool_.size() >= target_size_) {
+                return;
+            }
             pool_.push_back(make_new_instance());
         }
     }
-
     auto get_pool_size() const { return pool_.size(); }
-
 private:
-
-	auto increase_target_size() -> void
-    {
+	auto increase_target_size() -> void {
         set_target_size(target_size_ * 2);
     }
-
-    auto make_new_instance() -> NodeType*
-    {
-		const auto out { scene_->instance() };
-
-		if (scene_parent_node_) scene_parent_node_->add_child(out);
-
+    auto make_new_instance() -> NodeType* {
+		const auto out{scene_->instance()};
+		if (scene_parent_node_) {
+            scene_parent_node_->add_child(out);
+        }
 		return godot::Object::cast_to<NodeType>(out);
     }
-
-    auto set_target_size(uint32_t size) -> void
-    {
+    auto set_target_size(uint32_t size) -> void {
         target_size_ = size;
         pool_.reserve(size);
     }
-
     godot::Ref<godot::PackedScene> scene_;
     std::vector<NodeType*> pool_;
     godot::Node* scene_parent_node_{};
-    uint32_t target_size_;
+    uint32_t target_size_{0};
     uint32_t acquire_count_{0};
 };
 
