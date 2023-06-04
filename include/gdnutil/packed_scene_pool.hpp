@@ -35,8 +35,8 @@ class PackedScenePool
 {
 public:
     struct Config {
-        // Node to add the instanced scenes to. Can be null
-        godot::Node* scene_parent_node{};
+        // Node to add the scenes to when they are initialized or released. Can be null
+        godot::Node* parent{};
         // Resource path to scene
         godot::String scene_path;
         // Initial target pool size
@@ -44,14 +44,14 @@ public:
     };
     PackedScenePool() = default;
     PackedScenePool(Config config)
-        : scene_ { godot::ResourceLoader::get_singleton()->load(config.scene_path) }
-        , scene_parent_node_ { config.scene_parent_node }
-        , target_size_ { config.initial_size }
+        : scene_{godot::ResourceLoader::get_singleton()->load(config.scene_path)}
+        , parent_{config.parent}
+        , target_size_{config.initial_size}
     {
         assert (scene_.is_valid());
     }
     ~PackedScenePool() {
-        if (scene_parent_node_) {
+        if (parent_) {
             // Scenes will be freed automatically by Godot
             return;
         }
@@ -72,10 +72,13 @@ public:
 		return out;
     }
     auto release(NodeType* node) -> void {
-        if (!scene_parent_node_) {
-			const auto parent { node->get_parent() };
+		const auto parent{node->get_parent()};
+        if (parent_ != parent) {
             if (parent) {
-				parent->remove_child(node);
+                parent->remove_child(node);
+            }
+            if (parent_) {
+                parent_->add_child(node);
             }
         }
         acquire_count_--;
@@ -99,8 +102,8 @@ private:
     }
     auto make_new_instance() -> NodeType* {
 		const auto out{scene_->instance()};
-		if (scene_parent_node_) {
-            scene_parent_node_->add_child(out);
+		if (parent_) {
+            parent_->add_child(out);
         }
 		return godot::Object::cast_to<NodeType>(out);
     }
@@ -110,7 +113,7 @@ private:
     }
     godot::Ref<godot::PackedScene> scene_;
     std::vector<NodeType*> pool_;
-    godot::Node* scene_parent_node_{};
+    godot::Node* parent_{};
     uint32_t target_size_{0};
     uint32_t acquire_count_{0};
 };
