@@ -11,6 +11,7 @@ STRING(button_down);
 STRING(button_pressed);
 STRING(color_changed);
 STRING(confirmed);
+STRING(custom_action);
 STRING(draw);
 STRING(file_selected);
 STRING(files_selected);
