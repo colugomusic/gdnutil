@@ -7,6 +7,7 @@ namespace gdn {
 template <typename T, typename NodeType> struct Script;
 template <typename T, typename ScriptType, typename NodeType>
 struct Scene {
+	using node_type = NodeType;
 	NodeType* root{nullptr};
 	ScriptType* script{nullptr};
 	Scene() = default;
