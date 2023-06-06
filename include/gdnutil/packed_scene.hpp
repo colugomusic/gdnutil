@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Godot.hpp>
 #include <Object.hpp>
 #include <PackedScene.hpp>
 #include <ResourceLoader.hpp>
