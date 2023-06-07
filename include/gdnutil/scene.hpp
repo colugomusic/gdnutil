@@ -1,68 +1,74 @@
 #pragma once
 
+#include <type_traits>
+#include <Node.hpp>
 #include "packed_scene.hpp"
 
 namespace gdn {
 
-template <typename T, typename NodeType> struct Script;
-template <typename T, typename ScriptType, typename NodeType>
+template <typename T> struct Script;
+template <typename T, typename ScriptType, typename NodeType = godot::Node>
 struct Scene {
 	using node_type = NodeType;
-	NodeType* root{nullptr};
-	ScriptType* script{nullptr};
+	NodeType* node{nullptr};
 	Scene() = default;
 	Scene(const Scene&) = delete;
 	auto operator=(const Scene&) -> Scene& = delete;
 	Scene(Scene&& rhs)
-		: root{rhs.root}
-		, script{rhs.script}
+		: node{rhs.node}
+		, root{rhs.root}
 		, owned_{rhs.owned_}
 	{
-		reinterpret_cast<Script<T, NodeType>*>(script)->view = static_cast<T*>(this);
+		reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		rhs.node = nullptr;
 		rhs.root = nullptr;
 		rhs.owned_ = false;
 	}
 	auto operator=(Scene&& rhs) -> Scene& {
+		node = rhs.node;
 		root = rhs.root;
-		script = rhs.script;
 		owned_ = rhs.owned_;
-		reinterpret_cast<Script<T, NodeType>*>(script)->view = static_cast<T*>(this);
+		reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		rhs.node = nullptr;
 		rhs.root = nullptr;
 		rhs.owned_ = false;
 		return *this;
 	}
-	Scene(PackedScene<NodeType> packed_scene)
-		: root{packed_scene.instance()}
-		, script{godot::Object::cast_to<ScriptType>(root)}
+	template <typename U, typename e = std::enable_if_t<std::is_base_of_v<NodeType, U>>>
+	Scene(PackedScene<U> packed_scene)
+		: node{packed_scene.instance()}
+		, root{godot::Object::cast_to<ScriptType>(node)}
 		, owned_{true}
 	{
-		script->view = static_cast<T*>(this);
+		root->view = static_cast<T*>(this);
 	}
-	Scene(NodeType* node)
-		: root{node}
-		, script{godot::Object::cast_to<ScriptType>(root)}
+	template <typename U, typename e = std::enable_if_t<std::is_base_of_v<NodeType, U>>>
+	Scene(U* node)
+		: node{node}
+		, root{godot::Object::cast_to<ScriptType>(node)}
 	{
-		script->view = static_cast<T*>(this);
+		root->view = static_cast<T*>(this);
 	}
 	~Scene() {
 		if (owned_) {
-			root->free();
+			node->free();
 		}
 	}
-	operator bool() const { return root; }
+	operator bool() const { return node; }
 	static auto make() -> Scene {
 		Scene out{ScriptType::_new()};
 		out.owned_ = true;
 		return out;
 	}
+protected:
+	ScriptType* root{nullptr};
 private:
 	bool owned_{false};
-	friend struct Script<T, NodeType>;
+	friend struct Script<T>;
 };
 
-template <typename View, typename NodeType>
-struct Script : public NodeType {
-	auto _init() {}
+template <typename View>
+struct Script {
 	~Script() {
 		view->owned_ = false;
 	}
