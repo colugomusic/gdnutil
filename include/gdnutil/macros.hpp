@@ -25,3 +25,8 @@
 	auto _init() -> void { i_ = this; }\
 	private:\
 	static inline Name* i_{}
+
+#define GDN_SCRIPT(Name, NodeType) \
+	GDN_CLASS(Name, NodeType); \
+	public: \
+	auto _init() {}
