@@ -76,8 +76,7 @@ auto require(godot::NodePath path, T** out) -> void {
 
 template <typename T, typename... Args>
 auto require(godot::Node* parent, godot::NodePath path, T* out, Args&&... args) -> void {
-	auto node{require<typename T::node_type>(parent, path)};
-	*out = T(node, std::forward<Args>(args)...);
+	*out = T(require<typename T::node_type>(parent, path), std::forward<Args>(args)...);
 }
 
 template <class T>
