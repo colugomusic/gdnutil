@@ -19,7 +19,9 @@ struct Scene {
 		, root{rhs.root}
 		, owned_{rhs.owned_}
 	{
-		reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		if (root) {
+			reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		}
 		rhs.node = nullptr;
 		rhs.root = nullptr;
 		rhs.owned_ = false;
@@ -28,7 +30,9 @@ struct Scene {
 		node = rhs.node;
 		root = rhs.root;
 		owned_ = rhs.owned_;
-		reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		if (root) {
+			reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		}
 		rhs.node = nullptr;
 		rhs.root = nullptr;
 		rhs.owned_ = false;
