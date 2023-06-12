@@ -88,7 +88,11 @@ private:
 template <typename View>
 struct Script {
 	~Script() {
-		view->owned_ = false;
+		if (view) {
+			view->owned_ = false;
+			view->root = nullptr;
+			view->script_ = nullptr;
+		}
 	}
 	View* view;
 };
