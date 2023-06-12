@@ -18,44 +18,57 @@ struct Scene {
 		: node{rhs.node}
 		, root{rhs.root}
 		, owned_{rhs.owned_}
+		, script_{rhs.script_}
 	{
-		if (root) {
-			reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		if (script_) {
+			script_->view = static_cast<T*>(this);
 		}
 		rhs.node = nullptr;
 		rhs.root = nullptr;
 		rhs.owned_ = false;
+		rhs.script_ = nullptr;
 	}
 	auto operator=(Scene&& rhs) -> Scene& {
+		if (script_) {
+			script_->view = nullptr;
+		}
 		node = rhs.node;
 		root = rhs.root;
 		owned_ = rhs.owned_;
-		if (root) {
-			reinterpret_cast<Script<T>*>(root)->view = static_cast<T*>(this);
+		script_ = rhs.script_;
+		if (script_) {
+			script_->view = static_cast<T*>(this);
 		}
 		rhs.node = nullptr;
 		rhs.root = nullptr;
 		rhs.owned_ = false;
+		rhs.script_ = nullptr;
 		return *this;
 	}
 	template <typename U, typename e = std::enable_if_t<std::is_base_of_v<NodeType, U>>>
 	Scene(PackedScene<U> packed_scene)
 		: node{packed_scene.instance()}
 		, root{godot::Object::cast_to<ScriptType>(node)}
+		, script_{reinterpret_cast<Script<T>*>(root)}
 		, owned_{true}
 	{
-		root->view = static_cast<T*>(this);
+		script_->view = static_cast<T*>(this);
 	}
 	template <typename U, typename e = std::enable_if_t<std::is_base_of_v<NodeType, U>>>
 	Scene(U* node)
 		: node{node}
 		, root{godot::Object::cast_to<ScriptType>(node)}
+		, script_{reinterpret_cast<Script<T>*>(root)}
 	{
-		root->view = static_cast<T*>(this);
+		script_->view = static_cast<T*>(this);
 	}
 	~Scene() {
 		if (owned_) {
 			node->free();
+			return;
+		}
+		if (script_) {
+			script_->view = nullptr;
 		}
 	}
 	operator bool() const { return node; }
@@ -68,6 +81,7 @@ protected:
 	ScriptType* root{nullptr};
 private:
 	bool owned_{false};
+	Script<T>* script_{nullptr};
 	friend struct Script<T>;
 };
 
