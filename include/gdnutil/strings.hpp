@@ -27,6 +27,7 @@ STRING(mouse_exited);
 STRING(pressed);
 STRING(popup_hide);
 STRING(resized);
+STRING(sort_children);
 STRING(text_changed);
 STRING(text_entered);
 STRING(timeout);
