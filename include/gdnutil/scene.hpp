@@ -62,6 +62,14 @@ struct Scene {
 	{
 		script_->view = static_cast<T*>(this);
 	}
+	Scene(ScriptType* script)
+		: node{script}
+		, root{script}
+		, script_{reinterpret_cast<Script<T>*>(root)}
+		, owned_{true}
+	{
+		script_->view = static_cast<T*>(this);
+	}
 	~Scene() {
 		if (owned_) {
 			node->free();
@@ -97,4 +105,13 @@ struct Script {
 	View* view;
 };
 
+template <typename NodeType, typename Body>
+struct SceneWrapper {
+	SceneWrapper() = default;
+	template <typename... Args>
+	SceneWrapper(godot::Node* node, Args&&... args) : body_{std::make_unique<Body>(godot::Object::cast_to<NodeType>(node), std::forward<Args>(args)...)} {}
+	operator bool() const { return bool(body_); }
+	auto get_node() const { return body_->node; }
+	std::unique_ptr<Body> body_;
+};
 } // gdn
