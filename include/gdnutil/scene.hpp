@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <type_traits>
 #include <Node.hpp>
 #include "packed_scene.hpp"
@@ -54,7 +55,10 @@ struct Scene {
 	{
 		script_->view = static_cast<T*>(this);
 	}
-	template <typename U, typename e = std::enable_if_t<std::is_base_of_v<NodeType, U>>>
+	template <typename U,
+		typename e0 = std::enable_if_t<std::is_base_of_v<NodeType, U>>,
+		typename e1 = std::enable_if_t<!std::is_same_v<ScriptType, U>>
+	>
 	Scene(U* node)
 		: node{node}
 		, root{godot::Object::cast_to<ScriptType>(node)}
@@ -114,4 +118,5 @@ struct SceneWrapper {
 	auto get_node() const { return body_->node; }
 	std::unique_ptr<Body> body_;
 };
+
 } // gdn
