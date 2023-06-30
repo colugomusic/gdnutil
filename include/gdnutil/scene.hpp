@@ -148,12 +148,12 @@ struct Controller {
 		script_->controller = static_cast<T*>(this);
 	}
 	~Controller() {
+		assert (script_);
+		script_->controller = nullptr;
 		if (node_) {
 			node_->free();
 			return;
 		}
-		assert (script_);
-		script_->controller = nullptr;
 	}
 	operator bool() const { return root; }
 private:
