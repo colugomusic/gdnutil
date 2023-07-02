@@ -57,7 +57,6 @@ struct Controller {
 		}
 	}
 	operator bool() const { return root; }
-private:
 protected:
 	ScriptType* root{nullptr};
 private:
@@ -69,64 +68,73 @@ private:
 	friend struct Script<T>;
 };
 
+struct acquire{};
+struct make{};
+struct open{};
+
 template <typename ControllerType>
 struct Scene {
 public:
-	auto& controller() { return *controller_; }
-	auto& controller() const { return *controller_; }
-	auto operator->() const -> ControllerType* { return controller_.get(); }
-	auto operator*() -> ControllerType& { return *controller_; }
-	auto operator*() const -> const ControllerType& { return *controller_; }
-	auto& node() { return *controller_->node; }
-	auto& node() const { return *controller_->node; }
-	operator bool() const { return bool(controller_); }
-	[[nodiscard]]
-	static auto acquire(godot::Node* node) -> Scene<ControllerType> {
-		Scene<ControllerType> out;
-		out.acquire_(node);
-		return out;
-	}
-	template <typename... Args> [[nodiscard]]
-	static auto make(Args&&... args) -> Scene<ControllerType> {
-		Scene<ControllerType> out;
-		out.make_(std::forward<Args>(args)...);
-		return out;
-	}
-	template <typename NodeType, typename... Args> [[nodiscard]]
-	static auto open(NodeType* node, Args&&... args) -> Scene<ControllerType> {
-		Scene<ControllerType> out;
-		out.open_(node, std::forward<Args>(args)...);
-		return out;
-	}
-private:
-	auto acquire_(godot::Node* node) -> void {
-		auto script{reinterpret_cast<Script<ControllerType>*>(node)};
-		controller_ = script->controller_wkptr.lock();
+	Scene() = default;
+	Scene(const Scene& rhs) = default;
+	Scene(Scene&&) = default;
+	Scene& operator=(const Scene&) = default;
+	Scene& operator=(Scene&&) = default;
+	Scene(acquire, godot::Node* node)
+		: controller_{ControllerType::get_script(node).controller_wkptr.lock()}
+	{
 	}
 	template <typename... Args>
-	auto make_(Args&&... args) -> void {
-		controller_ = std::make_shared<ControllerType>(std::forward<Args>(args)...);
+	Scene(make, Args&&... args)
+		: controller_{std::make_shared<ControllerType>(std::forward<Args>(args)...)}
+	{
 		controller_->script_->controller_wkptr = controller_;
 	}
 	template <typename NodeType, typename... Args>
-	auto open_(NodeType* node, Args&&... args) -> void {
-		auto script{reinterpret_cast<Script<ControllerType>*>(node)};
-		if (script->controller_wkptr.expired()) {
+	Scene(open, NodeType* node, Args&&... args) {
+		auto& script{ControllerType::get_script(node)};
+		if (script.controller_wkptr.expired()) {
 			controller_ = std::make_shared<ControllerType>(node, std::forward<Args>(args)...);
-			script->controller_wkptr = controller_;
+			script.controller_wkptr = controller_;
 		}
 		else {
-			acquire_(node);
+			controller_ = script.controller_wkptr.lock();
 		}
 	}
+	auto operator->() const -> ControllerType* { return controller_.get(); }
+	auto operator*() -> ControllerType& { return *controller_; }
+	auto operator*() const -> const ControllerType& { return *controller_; }
+	operator bool() const { return bool(controller_); }
+private:
 	std::shared_ptr<ControllerType> controller_;
+};
+
+template <typename ControllerType, typename NodeType>
+struct StaticScene {
+	StaticScene() = default;
+	StaticScene(NodeType* node) : node_{node} {}
+	auto acquire() {
+		assert (node_);
+		scene_ = {gdn::acquire{}, node_};
+	}
+	template <typename... Args>
+	auto open(Args&&... args) {
+		assert (node_);
+		scene_ = {gdn::open{}, node_, std::forward<Args>(args)...};
+	}
+	auto operator->() const -> ControllerType* { return scene_.operator->(); }
+	auto operator*() -> ControllerType& { return *scene_.; }
+	auto operator*() const -> const ControllerType& { return *scene_; }
+	operator bool() const { return node_ && scene_; }
+private:
+	NodeType* node_{};
+	gdn::Scene<ControllerType> scene_;
 };
 
 template <typename ControllerType>
 struct Script {
 	~Script() {
 		if (controller) {
-			controller->node = nullptr;
 			controller->root = nullptr;
 			controller->script_ = nullptr;
 			controller->owning_ = false;
