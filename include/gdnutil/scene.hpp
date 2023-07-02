@@ -26,7 +26,6 @@ struct Controller {
 		, script_{reinterpret_cast<Script<T>*>(root)}
 		, owning_{true}
 	{
-		script_->controller = static_cast<T*>(this);
 	}
 	template <typename U,
 		typename e0 = std::enable_if_t<std::is_base_of_v<NodeType, U>>,
@@ -38,7 +37,6 @@ struct Controller {
 		, script_{reinterpret_cast<Script<T>*>(root)}
 		, owning_{false}
 	{
-		script_->controller = static_cast<T*>(this);
 	}
 	Controller(ScriptType* script)
 		: node{script}
@@ -46,11 +44,8 @@ struct Controller {
 		, script_{reinterpret_cast<Script<T>*>(root)}
 		, owning_{true}
 	{
-		script_->controller = static_cast<T*>(this);
 	}
 	~Controller() {
-		assert (script_);
-		script_->controller = nullptr;
 		if (owning_) {
 			node->free();
 			return;
@@ -76,37 +71,68 @@ template <typename ControllerType>
 struct Scene {
 public:
 	Scene() = default;
-	Scene(const Scene& rhs) = default;
-	Scene(Scene&&) = default;
-	Scene& operator=(const Scene&) = default;
-	Scene& operator=(Scene&&) = default;
-	Scene(acquire, godot::Node* node)
-		: controller_{ControllerType::get_script(node).controller_wkptr.lock()}
-	{
+	Scene(acquire, godot::Node* node) {
+		auto& script{ControllerType::get_script(node)};
+		controller_ = script.controller.get();
+		ref();
 	}
 	template <typename... Args>
-	Scene(make, Args&&... args)
-		: controller_{std::make_shared<ControllerType>(std::forward<Args>(args)...)}
-	{
-		controller_->script_->controller_wkptr = controller_;
+	Scene(make, Args&&... args) {
+		auto controller{std::make_unique<ControllerType>(std::forward<Args>(args)...)};
+		controller_ = controller.get();
+		controller->script_->controller = std::move(controller);
+		ref();
 	}
 	template <typename NodeType, typename... Args>
 	Scene(open, NodeType* node, Args&&... args) {
 		auto& script{ControllerType::get_script(node)};
-		if (script.controller_wkptr.expired()) {
-			controller_ = std::make_shared<ControllerType>(node, std::forward<Args>(args)...);
-			script.controller_wkptr = controller_;
+		if (!script.controller) {
+			script.controller = std::make_unique<ControllerType>(node, std::forward<Args>(args)...);
 		}
-		else {
-			controller_ = script.controller_wkptr.lock();
-		}
+		controller_ = script.controller.get();
+		ref();
 	}
-	auto operator->() const -> ControllerType* { return controller_.get(); }
+	~Scene() {
+		unref();
+	}
+	Scene(const Scene& rhs)
+		: controller_{rhs.controller_}
+	{
+		ref();
+	}
+	Scene(Scene&& rhs)
+		: controller_{rhs.controller_}
+	{
+		rhs.controller_ = nullptr;
+	}
+	Scene& operator=(const Scene& rhs) {
+		unref();
+		controller_ = rhs.controller_;
+		ref();
+		return *this;
+	}
+	Scene& operator=(Scene&& rhs) {
+		unref();
+		controller_ = rhs.controller_;
+		rhs.controller_ = nullptr;
+		return *this;
+	}
+	auto operator->() const -> ControllerType* { return controller_; }
 	auto operator*() -> ControllerType& { return *controller_; }
 	auto operator*() const -> const ControllerType& { return *controller_; }
 	operator bool() const { return bool(controller_); }
 private:
-	std::shared_ptr<ControllerType> controller_;
+	auto ref() -> void {
+		if (controller_) {
+			controller_->script_->ref();
+		}
+	}
+	auto unref() -> void {
+		if (controller_) {
+			controller_->script_->unref();
+		}
+	}
+	ControllerType* controller_{};
 };
 
 template <typename ControllerType, typename NodeType>
@@ -140,8 +166,21 @@ struct Script {
 			controller->owning_ = false;
 		}
 	}
-	ControllerType* controller{nullptr};
-	std::weak_ptr<ControllerType> controller_wkptr;
+	std::unique_ptr<ControllerType> controller;
+private:
+	auto ref() {
+		assert (controller);
+		ref_count_++;
+	}
+	auto unref() {
+		assert (controller);
+		ref_count_--;
+		if (ref_count_ == 0) {
+			controller.reset();
+		}
+	}
+	uint32_t ref_count_{0};
+	friend struct Scene<ControllerType>;
 };
 
 template <typename NodeType, typename Body>
