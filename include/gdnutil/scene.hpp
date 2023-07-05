@@ -2,16 +2,67 @@
 
 #include <cassert>
 #include <memory>
+#include <optional>
 #include <set>
+#include <tuple>
 #include <type_traits>
 #include <Node.hpp>
 #include "packed_scene.hpp"
 
 namespace gdn {
+namespace scene {
 
-struct acquire{};
-struct make{};
-struct open{};
+struct acquire_t {
+	godot::Node* node;
+};
+
+template <typename... Ts>
+struct make_controller_t {
+	std::tuple<Ts...> args;
+};
+
+template <typename... Ts>
+struct make_node_t {
+	std::tuple<Ts...> args;
+};
+
+template <typename MakeNode, typename MakeController>
+struct make_t {
+	MakeNode node;
+	MakeController controller;
+};
+
+template <typename NodeType, typename... Ts>
+struct open_t {
+	NodeType* node;
+	std::tuple<Ts...> args;
+};
+
+inline auto acquire(godot::Node* node) -> acquire_t {
+	return acquire_t{node};
+}
+
+template <typename... Ts>
+auto make_controller(Ts&&... ts) -> make_controller_t<Ts...> {
+	return make_controller_t<Ts...>{ {std::forward<Ts>(ts)...}};
+}
+
+template <typename... Ts>
+auto make_node(Ts&&... ts) -> make_node_t<Ts...> {
+	return make_node_t<Ts...>{ {std::forward<Ts>(ts)...}};
+}
+
+template <typename MakeNode, typename MakeController>
+auto make(MakeNode&& node, MakeController&& controller) -> make_t<MakeNode, MakeController> {
+	return make_t<MakeNode, MakeController>{std::forward<MakeNode>(node), std::forward<MakeController>(controller)};
+}
+
+template <typename NodeType, typename... Ts>
+auto open(NodeType* node, Ts&&... ts) -> open_t<NodeType, Ts...> {
+	return open_t<NodeType, Ts...>{ node, {std::forward<Ts>(ts)...}};
+}
+
+} // scene
 
 template <typename T> struct Scene;
 template <typename T> struct Script;
@@ -19,40 +70,28 @@ template <typename T, typename ScriptType, typename NodeType = godot::Node>
 struct Controller {
 	using node_type = NodeType;
 	using script_type = ScriptType;
-	NodeType* const node{nullptr};
+	struct make{node_type* node;};
+	struct open{node_type* node;};
+	node_type* const node{nullptr};
 	Controller(const Controller&) = delete;
 	Controller(Controller&& rhs) = delete;
 	auto operator=(const Controller&) -> Controller& = delete;
 	auto operator=(Controller&& rhs) -> Controller& = delete;
-	template <typename U, typename e = std::enable_if_t<std::is_base_of_v<NodeType, U>>>
-	Controller(PackedScene<U> packed_scene)
-		: node{packed_scene.instance()}
-		, root{godot::Object::cast_to<ScriptType>(node)}
-		, owning_{true}
-	{
-	}
-	template <typename U>
-	Controller(gdn::open, U* node)
-		: node{node}
-		, root{godot::Object::cast_to<ScriptType>(node)}
+	Controller(open o)
+		: node{o.node}
+		, root{godot::Object::cast_to<script_type>(o.node)}
 		, owning_{false}
 	{
 	}
-	Controller(gdn::make, ScriptType* script)
-		: node{script}
-		, root{script}
+	Controller(make m)
+		: node{m.node}
+		, root{godot::Object::cast_to<script_type>(m.node)}
 		, owning_{true}
 	{
 	}
-	~Controller() {
-		if (owning_) {
-			node->free();
-			return;
-		}
-	}
 	operator bool() const { return root; }
 protected:
-	ScriptType* root{nullptr};
+	script_type* root{nullptr};
 private:
 	// If false, this is a non-owning controller (the node
 	// won't be freed when the controller is destroyed.)
@@ -65,22 +104,29 @@ template <typename ControllerType>
 struct Scene {
 public:
 	Scene() = default;
-	Scene(acquire, godot::Node* node) {
-		script_ = &ControllerType::get_script(node);
+	Scene(scene::acquire_t acquire) {
+		script_ = &ControllerType::acquire(acquire.node);
 		ref();
 	}
-	template <typename... Args>
-	Scene(make, Args&&... args) {
-		auto controller{std::make_unique<ControllerType>(make{}, std::forward<Args>(args)...)};
-		script_ = &ControllerType::get_script(controller->node);
-		script_->controller = std::move(controller);
+	template <typename ScriptArgs, typename... ControllerArgs>
+	Scene(scene::make_t<ScriptArgs, ControllerArgs...>&& make) {
+		auto& node =
+			std::apply([](auto&&...args) -> decltype(auto) {
+				return ControllerType::make_node(std::move(args)...);
+			}, std::move(make.node.args));
+		script_ = &ControllerType::acquire(&node);
+		std::apply([&node, script = script_](auto&&...args) {
+			script->controller.emplace(typename ControllerType::make{&node}, std::move(args)...);
+		}, std::move(make.controller.args));
 		ref();
 	}
-	template <typename NodeType, typename... Args>
-	Scene(open, NodeType* node, Args&&... args) {
-		script_ = &ControllerType::get_script(node);
+	template <typename NodeType, typename... ControllerArgs>
+	Scene(scene::open_t<NodeType, ControllerArgs...>&& open) {
+		script_ = &ControllerType::acquire(open.node);
 		if (!script_->controller) {
-			script_->controller = std::make_unique<ControllerType>(open{}, node, std::forward<Args>(args)...);
+			std::apply([node = open.node, script = script_](auto&&...args) {
+				script->controller.emplace(typename ControllerType::open{node}, std::move(args)...);
+			}, std::move(open.args));
 		}
 		ref();
 	}
@@ -111,7 +157,7 @@ public:
 		rhs.unref();
 		return *this;
 	}
-	auto operator->() const -> ControllerType* { return script_->controller.get(); }
+	auto operator->() const -> ControllerType* { return script_->controller.operator->(); }
 	auto operator*() -> ControllerType& { return *script_->controller; }
 	auto operator*() const -> const ControllerType& { return *script_->controller; }
 	operator bool() const { return bool(script_); }
@@ -142,7 +188,7 @@ struct StaticScene {
 	template <typename... Args>
 	auto open(Args&&... args) {
 		assert (node_);
-		scene_ = {gdn::open{}, node_, std::forward<Args>(args)...};
+		scene_ = gdn::Scene<ControllerType>(gdn::scene::open(node_, std::forward<Args>(args)...));
 	}
 	auto operator->() const -> ControllerType* { return scene_.operator->(); }
 	auto operator*() -> ControllerType& { return *scene_.; }
@@ -164,7 +210,7 @@ struct Script {
 			ref->script_ = nullptr;
 		}
 	}
-	std::unique_ptr<ControllerType> controller;
+	std::optional<ControllerType> controller;
 private:
 	auto ref(Scene<ControllerType>* ref) {
 		assert (controller);
@@ -174,12 +220,21 @@ private:
 		assert (controller);
 		refs_.erase(ref);
 		if (refs_.empty()) {
+			godot::Node* node_to_free{controller->owning_ ? controller->node : nullptr};
 			controller.reset();
+			if (node_to_free) {
+				node_to_free->free();
+			}
 		}
 	}
 	std::set<Scene<ControllerType>*> refs_;
 	friend struct Scene<ControllerType>;
 };
+
+template <typename ControllerType, typename ScriptType>
+auto acquire(godot::Node* node) -> gdn::Script<ControllerType>& {
+	return *reinterpret_cast<gdn::Script<ControllerType>*>(Object::cast_to<ScriptType>(node));
+}
 
 template <typename NodeType, typename Body>
 struct SceneWrapper {
