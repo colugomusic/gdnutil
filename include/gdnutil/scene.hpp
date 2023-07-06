@@ -26,16 +26,16 @@ struct make_node_t {
 	std::tuple<Ts...> args;
 };
 
-template <typename MakeNode, typename MakeController>
+template <typename MkNode, typename MkController>
 struct make_t {
-	MakeNode node;
-	MakeController controller;
+	MkNode node;
+	MkController controller;
 };
 
 template <typename NodeType, typename... Ts>
 struct open_t {
 	NodeType* node;
-	std::tuple<Ts...> args;
+	make_controller_t<Ts...> args;
 };
 
 inline auto acquire(godot::Node* node) -> acquire_t {
@@ -59,7 +59,7 @@ auto make(MakeNode&& node, MakeController&& controller) -> make_t<MakeNode, Make
 
 template <typename NodeType, typename... Ts>
 auto open(NodeType* node, Ts&&... ts) -> open_t<NodeType, Ts...> {
-	return open_t<NodeType, Ts...>{ node, {std::forward<Ts>(ts)...}};
+	return open_t<NodeType, Ts...>{ node, make_controller(std::forward<Ts>(ts)...)};
 }
 
 } // scene
@@ -102,31 +102,26 @@ private:
 
 template <typename ControllerType>
 struct Scene {
-public:
+	using node_type = typename ControllerType::node_type;
+	using make_controller = typename ControllerType::make;
+	using open_controller = typename ControllerType::open;
 	Scene() = default;
-	Scene(scene::acquire_t acquire) {
-		script_ = &ControllerType::acquire(acquire.node);
+	Scene(scene::acquire_t a) {
+		script_ = acquire(a.node);
 		ref();
 	}
-	template <typename ScriptArgs, typename... ControllerArgs>
-	Scene(scene::make_t<ScriptArgs, ControllerArgs...>&& make) {
-		auto& node =
-			std::apply([](auto&&...args) -> decltype(auto) {
-				return ControllerType::make_node(std::move(args)...);
-			}, std::move(make.node.args));
-		script_ = &ControllerType::acquire(&node);
-		std::apply([&node, script = script_](auto&&...args) {
-			script->controller.emplace(typename ControllerType::make{&node}, std::move(args)...);
-		}, std::move(make.controller.args));
+	template <typename MkNode, typename MkController>
+	Scene(scene::make_t<MkNode, MkController>&& make) {
+		auto& node{create(std::move(make.node))};
+		script_ = acquire(&node);
+		create(make_controller{&node}, std::move(make.controller));
 		ref();
 	}
 	template <typename NodeType, typename... ControllerArgs>
 	Scene(scene::open_t<NodeType, ControllerArgs...>&& open) {
-		script_ = &ControllerType::acquire(open.node);
+		script_ = acquire(open.node);
 		if (!script_->controller) {
-			std::apply([node = open.node, script = script_](auto&&...args) {
-				script->controller.emplace(typename ControllerType::open{node}, std::move(args)...);
-			}, std::move(open.args));
+			create(open_controller{open.node}, std::move(open.args));
 		}
 		ref();
 	}
@@ -138,7 +133,7 @@ public:
 	{
 		ref();
 	}
-	Scene(Scene&& rhs)
+	Scene(Scene&& rhs) noexcept
 		: script_{rhs.script_}
 	{
 		ref();
@@ -150,7 +145,7 @@ public:
 		ref();
 		return *this;
 	}
-	Scene& operator=(Scene&& rhs) {
+	Scene& operator=(Scene&& rhs) noexcept {
 		unref();
 		script_ = rhs.script_;
 		ref();
@@ -172,6 +167,26 @@ private:
 			script_->unref(this);
 			script_ = nullptr;
 		}
+	}
+	// Acquire an already-open controller. The controller must be open!
+	auto acquire(godot::Node* node) const -> gdn::Script<ControllerType>* {
+		return &ControllerType::acquire(node);
+	}
+	// Create the controller in either "Make" mode or "Open" mode
+	template <typename Mode, typename... Ts>
+	auto create(Mode&& mode, scene::make_controller_t<Ts...>&& make) -> void {
+		auto fn = [mode, script = script_](auto&&...args) {
+			script->controller.emplace(mode, std::move(args)...);
+		};
+		std::apply(std::move(fn), std::move(make.args));
+	}
+	// Crate the node
+	template <typename... Ts>
+	auto create(scene::make_node_t<Ts...>&& make) const -> node_type& {
+		auto fn = [](auto&&...args) -> decltype(auto) {
+			return ControllerType::make_node(std::move(args)...);
+		};
+		return std::apply(std::move(fn), std::move(make.args));
 	}
 	Script<ControllerType>* script_{};
 	friend struct Script<ControllerType>;
@@ -231,9 +246,9 @@ private:
 	friend struct Scene<ControllerType>;
 };
 
-template <typename ControllerType, typename ScriptType>
+template <typename ControllerType>
 auto acquire(godot::Node* node) -> gdn::Script<ControllerType>& {
-	return *reinterpret_cast<gdn::Script<ControllerType>*>(Object::cast_to<ScriptType>(node));
+	return *reinterpret_cast<gdn::Script<ControllerType>*>(Object::cast_to<typename ControllerType::script_type>(node));
 }
 
 template <typename NodeType, typename Body>
