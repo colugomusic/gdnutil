@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <set>
@@ -8,9 +9,16 @@
 #include <type_traits>
 #include <Node.hpp>
 #include "packed_scene.hpp"
+#include "tree.hpp"
 
 namespace gdn {
 namespace scene {
+
+using node_deleter_t = std::function<void(godot::Node*)>;
+
+static constexpr auto default_delete = [](godot::Node* node) {
+	node->free();
+};
 
 struct acquire_t {
 	godot::Node* node;
@@ -28,6 +36,7 @@ struct make_node_t {
 
 template <typename MkNode, typename MkScene>
 struct make_t {
+	node_deleter_t deleter;
 	MkNode node;
 	MkScene scene;
 };
@@ -53,8 +62,13 @@ auto make_node(Ts&&... ts) -> make_node_t<Ts...> {
 }
 
 template <typename MakeNode, typename MakeScene>
+auto make(node_deleter_t deleter, MakeNode&& node, MakeScene&& scene) -> make_t<MakeNode, MakeScene> {
+	return make_t<MakeNode, MakeScene>{std::move(deleter), std::forward<MakeNode>(node), std::forward<MakeScene>(scene)};
+}
+
+template <typename MakeNode, typename MakeScene>
 auto make(MakeNode&& node, MakeScene&& scene) -> make_t<MakeNode, MakeScene> {
-	return make_t<MakeNode, MakeScene>{std::forward<MakeNode>(node), std::forward<MakeScene>(scene)};
+	return make(default_delete, std::forward<MakeNode>(node), std::forward<MakeScene>(scene));
 }
 
 template <typename NodeType, typename... Ts>
@@ -70,7 +84,7 @@ template <typename T, typename ScriptType, typename NodeType = godot::Node>
 struct Scene {
 	using node_type = NodeType;
 	using script_type = ScriptType;
-	struct make{node_type* node;};
+	struct make{node_type* node; scene::node_deleter_t deleter;};
 	struct open{node_type* node;};
 	node_type* const node{nullptr};
 	Scene(const Scene&) = delete;
@@ -87,6 +101,7 @@ struct Scene {
 		: node{m.node}
 		, root{godot::Object::cast_to<script_type>(m.node)}
 		, owning_{true}
+		, deleter_{std::move(m.deleter)}
 	{
 	}
 	operator bool() const { return root; }
@@ -96,6 +111,7 @@ private:
 	// If false, this is a non-owning scene (the node
 	// won't be freed when the scene is destroyed.)
 	bool owning_{false};
+	scene::node_deleter_t deleter_;
 	friend struct View<T>;
 	friend struct Script<T>;
 };
@@ -114,7 +130,7 @@ struct View {
 	View(scene::make_t<MkNode, MkScene>&& make) {
 		auto& node{create(std::move(make.node))};
 		script_ = acquire(&node);
-		create(make_scene{&node}, std::move(make.scene));
+		create(make_scene{&node, std::move(make.deleter)}, std::move(make.scene));
 		ref();
 	}
 	template <typename NodeType, typename... SceneArgs>
@@ -156,6 +172,7 @@ struct View {
 	auto operator*() -> SceneType& { return *script_->scene; }
 	auto operator*() const -> const SceneType& { return *script_->scene; }
 	operator bool() const { return bool(script_); }
+	operator node_type*() const { return script_->scene->node; }
 private:
 	auto ref() -> void {
 		if (script_) {
@@ -192,25 +209,37 @@ private:
 	friend struct Script<SceneType>;
 };
 
-template <typename SceneType, typename NodeType>
+template <typename SceneType>
 struct StaticView {
+	using node_type = typename SceneType::node_type;
 	StaticView() = default;
-	StaticView(NodeType* node) : node_{node} {}
+	StaticView(typename node_type* node) : node_{node} {}
+	StaticView(godot::Node* root, godot::NodePath path)
+		: node_{tree::require<node_type>(root, path)}
+	{
+	}
 	auto acquire() {
 		assert (node_);
 		scene_ = {gdn::acquire{}, node_};
+	}
+	auto close() {
+		assert (node_);
+		scene_ = {};
 	}
 	template <typename... Args>
 	auto open(Args&&... args) {
 		assert (node_);
 		scene_ = gdn::View<SceneType>(gdn::scene::open(node_, std::forward<Args>(args)...));
 	}
+	auto node() const { return node_; }
 	auto operator->() const -> SceneType* { return scene_.operator->(); }
 	auto operator*() -> SceneType& { return *scene_.; }
 	auto operator*() const -> const SceneType& { return *scene_; }
 	operator bool() const { return node_ && scene_; }
+	operator node_type*() const { return node_; }
+	operator gdn::View<SceneType>() const { return scene_; }
 private:
-	NodeType* node_{};
+	typename node_type* node_{};
 	gdn::View<SceneType> scene_;
 };
 
@@ -236,10 +265,10 @@ private:
 		refs_.erase(ref);
 		if (refs_.empty()) {
 			godot::Node* node_to_free{scene->owning_ ? scene->node : nullptr};
-			scene.reset();
 			if (node_to_free) {
-				node_to_free->free();
+				scene.value().deleter_(node_to_free);
 			}
+			scene.reset();
 		}
 	}
 	std::set<View<SceneType>*> refs_;
