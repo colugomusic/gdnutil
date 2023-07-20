@@ -105,6 +105,13 @@ struct Scene {
 	{
 	}
 	operator bool() const { return root; }
+	template <typename Fn, typename... Args>
+	auto root_invoke(Fn&& fn, Args&&... args) -> void {
+		if (!root) {
+			return;
+		}
+		std::invoke(std::forward<Fn>(fn), *root, std::forward<Args>(args)...);
+	}
 protected:
 	script_type* root{nullptr};
 private:
@@ -253,6 +260,13 @@ struct Script {
 		for (const auto ref : refs_) {
 			ref->script_ = nullptr;
 		}
+	}
+	template <typename Fn, typename... Args>
+	auto scene_invoke(Fn&& fn, Args&&... args) -> void {
+		if (!scene) {
+			return;
+		}
+		std::invoke(std::forward<Fn>(fn), *scene, std::forward<Args>(args)...);
 	}
 	std::optional<SceneType> scene;
 private:
