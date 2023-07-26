@@ -52,28 +52,28 @@ inline auto acquire(godot::Node* node) -> acquire_t {
 }
 
 template <typename... Ts>
-auto make_scene(Ts&&... ts) -> make_scene_t<Ts...> {
-	return make_scene_t<Ts...>{ {std::forward<Ts>(ts)...}};
+auto make_scene(Ts... ts) -> make_scene_t<Ts...> {
+	return make_scene_t<Ts...>{ {std::move(ts)...}};
 }
 
 template <typename... Ts>
-auto make_node(Ts&&... ts) -> make_node_t<Ts...> {
-	return make_node_t<Ts...>{ {std::forward<Ts>(ts)...}};
+auto make_node(Ts... ts) -> make_node_t<Ts...> {
+	return make_node_t<Ts...>{ {std::move(ts)...}};
 }
 
 template <typename MakeNode, typename MakeScene>
-auto make(node_deleter_t deleter, MakeNode&& node, MakeScene&& scene) -> make_t<MakeNode, MakeScene> {
-	return make_t<MakeNode, MakeScene>{std::move(deleter), std::forward<MakeNode>(node), std::forward<MakeScene>(scene)};
+auto make(node_deleter_t deleter, MakeNode node, MakeScene scene) -> make_t<MakeNode, MakeScene> {
+	return make_t<MakeNode, MakeScene>{std::move(deleter), std::move(node), std::move(scene)};
 }
 
 template <typename MakeNode, typename MakeScene>
-auto make(MakeNode&& node, MakeScene&& scene) -> make_t<MakeNode, MakeScene> {
-	return make(default_delete, std::forward<MakeNode>(node), std::forward<MakeScene>(scene));
+auto make(MakeNode node, MakeScene scene) -> make_t<MakeNode, MakeScene> {
+	return make(default_delete, std::move(node), std::move(scene));
 }
 
 template <typename NodeType, typename... Ts>
-auto open(NodeType* node, Ts&&... ts) -> open_t<NodeType, Ts...> {
-	return open_t<NodeType, Ts...>{ node, make_scene(std::forward<Ts>(ts)...)};
+auto open(NodeType* node, Ts... ts) -> open_t<NodeType, Ts...> {
+	return open_t<NodeType, Ts...>{ node, make_scene(std::move(ts)...)};
 }
 
 } // scene
@@ -287,7 +287,10 @@ private:
 		if (refs_.empty()) {
 			godot::Node* node_to_free{scene->owning_ ? scene->node : nullptr};
 			if (node_to_free) {
-				scene.value().deleter_(node_to_free);
+				auto deleter{scene.value().deleter_};
+				scene.reset();
+				deleter(node_to_free);
+				return;
 			}
 			scene.reset();
 		}
