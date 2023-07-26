@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <CanvasItem.hpp>
 
 namespace gdn {
@@ -15,10 +16,9 @@ public:
 		return *this;
 	}
 	auto set_dirty() -> void {
+		assert (parent_);
 		dirty_ = true;
-		if (parent_) {
-			parent_->update();
-		}
+		parent_->update();
 	}
 	auto check_and_reset() -> bool {
 		const auto out{dirty_};
