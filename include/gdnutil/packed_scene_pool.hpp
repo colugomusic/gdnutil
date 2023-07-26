@@ -33,7 +33,7 @@ namespace gdn {
 struct PackedScenePool {
     struct Config {
         // Node to add the scenes to when they are initialized or released. Can be null
-        godot::Node* parent{};
+        godot::Node* idle_parent{};
         // Resource path to scene
         godot::String scene_path;
         // Initial target pool size
@@ -42,13 +42,13 @@ struct PackedScenePool {
     PackedScenePool() = default;
     PackedScenePool(Config config)
         : scene_{godot::ResourceLoader::get_singleton()->load(config.scene_path)}
-        , parent_{config.parent}
+        , idle_parent_{config.idle_parent}
         , target_size_{config.initial_size}
     {
         assert (scene_.is_valid());
     }
     ~PackedScenePool() {
-        if (parent_) {
+        if (idle_parent_) {
             // Scenes will be freed automatically by Godot
             return;
         }
@@ -70,12 +70,12 @@ struct PackedScenePool {
     }
     auto release(godot::Node* node) -> void {
 		const auto parent{node->get_parent()};
-        if (parent_ != parent) {
+        if (idle_parent_ != parent) {
             if (parent) {
                 parent->remove_child(node);
             }
-            if (parent_) {
-                parent_->add_child(node);
+            if (idle_parent_) {
+                idle_parent_->add_child(node);
             }
         }
         acquire_count_--;
@@ -99,8 +99,8 @@ private:
     }
     auto make_new_instance() -> godot::Node* {
 		const auto out{scene_->instance()};
-		if (parent_) {
-            parent_->add_child(out);
+		if (idle_parent_) {
+            idle_parent_->add_child(out);
         }
 		return out;
     }
@@ -110,7 +110,7 @@ private:
     }
     godot::Ref<godot::PackedScene> scene_;
     std::vector<godot::Node*> pool_;
-    godot::Node* parent_{};
+    godot::Node* idle_parent_{};
     uint32_t target_size_{0};
     uint32_t acquire_count_{0};
 };
