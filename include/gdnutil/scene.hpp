@@ -175,6 +175,12 @@ struct View {
 		rhs.unref();
 		return *this;
 	}
+	auto ref_count() const -> size_t {
+		if (!script_) {
+			return 0;
+		}
+		return script_->ref_count();
+	}
 	auto operator->() const -> SceneType* { return script_->scene.operator->(); }
 	auto operator*() -> SceneType& { return *script_->scene; }
 	auto operator*() const -> const SceneType& { return *script_->scene; }
@@ -268,6 +274,7 @@ struct Script {
 		}
 		std::invoke(std::forward<Fn>(fn), *scene, std::forward<Args>(args)...);
 	}
+	auto ref_count() const { return refs_.size(); }
 	std::optional<SceneType> scene;
 private:
 	auto ref(View<SceneType>* ref) {
