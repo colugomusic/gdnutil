@@ -20,10 +20,6 @@ static constexpr auto default_delete = [](godot::Node* node) {
 	node->free();
 };
 
-struct acquire_t {
-	godot::Node* node;
-};
-
 template <typename... Ts>
 struct make_scene_t {
 	std::tuple<Ts...> args;
@@ -42,14 +38,13 @@ struct make_t {
 };
 
 template <typename NodeType, typename... Ts>
-struct open_t {
+struct base_open_t {
 	NodeType* node;
 	make_scene_t<Ts...> args;
 };
 
-inline auto acquire(godot::Node* node) -> acquire_t {
-	return acquire_t{node};
-}
+template <typename NodeType, typename... Ts> struct open_t   : public base_open_t<NodeType, Ts...> {};
+template <typename NodeType, typename... Ts> struct reopen_t : public base_open_t<NodeType, Ts...> {};
 
 template <typename... Ts>
 auto make_scene(Ts... ts) -> make_scene_t<Ts...> {
@@ -74,6 +69,11 @@ auto make(MakeNode node, MakeScene scene) -> make_t<MakeNode, MakeScene> {
 template <typename NodeType, typename... Ts>
 auto open(NodeType* node, Ts... ts) -> open_t<NodeType, Ts...> {
 	return open_t<NodeType, Ts...>{ node, make_scene(std::move(ts)...)};
+}
+
+template <typename NodeType, typename... Ts>
+auto reopen(NodeType* node, Ts... ts) -> reopen_t<NodeType, Ts...> {
+	return reopen_t<NodeType, Ts...>{ node, make_scene(std::move(ts)...)};
 }
 
 } // scene
@@ -125,27 +125,44 @@ private:
 
 template <typename SceneType>
 struct View {
-	using node_type = typename SceneType::node_type;
+	using node_type  = typename SceneType::node_type;
 	using make_scene = typename SceneType::make;
 	using open_scene = typename SceneType::open;
 	View() = default;
-	View(scene::acquire_t a) {
-		script_ = acquire(a.node);
-		ref();
-	}
 	template <typename MkNode, typename MkScene>
+	// Create the node and create the scene for it.
+	// The created scene owns the node and will free
+	// it automatically when all views are destroyed.
 	View(scene::make_t<MkNode, MkScene>&& make) {
 		auto& node{create(std::move(make.node))};
-		script_ = acquire(&node);
+		script_ = &SceneType::acquire(&node);
+		assert (!script_->scene);
 		create(make_scene{&node, std::move(make.deleter)}, std::move(make.scene));
 		ref();
 	}
 	template <typename NodeType, typename... SceneArgs>
+	// Create the scene for an already existing node.
+	// The created scene does not own the node.
+	// The node must not already have a scene associated
+	// with it.
 	View(scene::open_t<NodeType, SceneArgs...>&& open) {
-		script_ = acquire(open.node);
-		if (!script_->scene) {
-			create(open_scene{open.node}, std::move(open.args));
+		script_ = &SceneType::acquire(open.node);
+		assert (!script_->scene);
+		create(open_scene{open.node}, std::move(open.args));
+		ref();
+	}
+	template <typename NodeType, typename... SceneArgs>
+	// Create the scene for an already existing node.
+	// The created scene does not own the node.
+	// If the node already has a scene associated with
+	// it then it is closed and the new scene takes its
+	// place.
+	View(scene::reopen_t<NodeType, SceneArgs...>&& open) {
+		script_ = &SceneType::acquire(open.node);
+		if (script_->scene) {
+			script_->reset();
 		}
+		create(open_scene{open.node}, std::move(open.args));
 		ref();
 	}
 	~View() {
@@ -198,20 +215,16 @@ private:
 			script_ = nullptr;
 		}
 	}
-	// Acquire an already-open scene. The scene must be open!
-	auto acquire(godot::Node* node) const -> gdn::Script<SceneType>* {
-		return &SceneType::acquire(node);
-	}
-	// Create the scene in either "Make" mode or "Open" mode
 	template <typename Mode, typename... Ts>
+	// Create the scene in either "Make" mode or "Open" mode
 	auto create(Mode&& mode, scene::make_scene_t<Ts...>&& make) -> void {
 		auto fn = [mode, script = script_](auto&&...args) {
 			script->scene.emplace(mode, std::move(args)...);
 		};
 		std::apply(std::move(fn), std::move(make.args));
 	}
-	// Crate the node
 	template <typename... Ts>
+	// Crate the node
 	auto create(scene::make_node_t<Ts...>&& make) const -> node_type& {
 		auto fn = [](auto&&...args) -> decltype(auto) {
 			return SceneType::make_node(std::move(args)...);
@@ -277,23 +290,29 @@ struct Script {
 	auto ref_count() const { return refs_.size(); }
 	std::optional<SceneType> scene;
 private:
-	auto ref(View<SceneType>* ref) {
+	auto ref(View<SceneType>* ref) -> void {
 		assert (scene);
 		refs_.insert(ref);
 	}
-	auto unref(View<SceneType>* ref) {
+	auto unref(View<SceneType>* ref) -> void {
 		assert (scene);
 		refs_.erase(ref);
 		if (refs_.empty()) {
-			godot::Node* node_to_free{scene->owning_ ? scene->node : nullptr};
-			if (node_to_free) {
-				auto deleter{scene.value().deleter_};
-				scene.reset();
-				deleter(node_to_free);
-				return;
-			}
-			scene.reset();
+			reset();
 		}
+	}
+	auto reset() -> void {
+		godot::Node* node_to_free{scene->owning_ ? scene->node : nullptr};
+		if (node_to_free) {
+			auto deleter{scene.value().deleter_};
+			scene.reset();
+			deleter(node_to_free);
+			return;
+		}
+		for (const auto ref : refs_) {
+			ref->script_ = nullptr;
+		}
+		scene.reset();
 	}
 	std::set<View<SceneType>*> refs_;
 	friend struct View<SceneType>;
