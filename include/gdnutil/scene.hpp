@@ -20,6 +20,10 @@ static constexpr auto default_delete = [](godot::Node* node) {
 	node->free();
 };
 
+struct acquire_t {
+	godot::Node* node;
+};
+
 template <typename... Ts>
 struct make_scene_t {
 	std::tuple<Ts...> args;
@@ -45,6 +49,10 @@ struct base_open_t {
 
 template <typename NodeType, typename... Ts> struct open_t   : public base_open_t<NodeType, Ts...> {};
 template <typename NodeType, typename... Ts> struct reopen_t : public base_open_t<NodeType, Ts...> {};
+
+inline auto acquire(godot::Node* node) -> acquire_t {
+	return acquire_t{node};
+}
 
 template <typename... Ts>
 auto make_scene(Ts... ts) -> make_scene_t<Ts...> {
@@ -129,6 +137,11 @@ struct View {
 	using make_scene = typename SceneType::make;
 	using open_scene = typename SceneType::open;
 	View() = default;
+	// Acquire a view for an already created scene.
+	View(scene::acquire_t a) {
+		script_ = &SceneType::acquire(a.node);
+		ref();
+	}
 	template <typename MkNode, typename MkScene>
 	// Create the node and create the scene for it.
 	// The created scene owns the node and will free
