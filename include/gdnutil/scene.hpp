@@ -211,6 +211,7 @@ struct View {
 		}
 		return script_->ref_count();
 	}
+	auto& scene() { return script_->scene.value(); }
 	auto operator->() const -> SceneType* { return script_->scene.operator->(); }
 	auto operator*() -> SceneType& { return *script_->scene; }
 	auto operator*() const -> const SceneType& { return *script_->scene; }
