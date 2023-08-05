@@ -271,6 +271,11 @@ struct StaticView {
 		assert (node_);
 		scene_ = gdn::View<SceneType>(gdn::scene::open(node_, std::forward<Args>(args)...));
 	}
+	template <typename... Args>
+	auto reopen(Args&&... args) {
+		assert (node_);
+		scene_ = gdn::View<SceneType>(gdn::scene::reopen(node_, std::forward<Args>(args)...));
+	}
 	auto node() const { return node_; }
 	auto operator->() const -> SceneType* { return scene_.operator->(); }
 	auto operator*() -> SceneType& { return *scene_.; }
