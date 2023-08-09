@@ -11,6 +11,10 @@
 #include "packed_scene.hpp"
 #include "tree.hpp"
 
+#if !defined(GDN_ASSERT)
+#define GDN_ASSERT(x) assert(x)
+#endif
+
 namespace gdn {
 namespace scene {
 
@@ -149,7 +153,7 @@ struct View {
 	View(scene::make_t<MkNode, MkScene>&& make) {
 		auto& node{create(std::move(make.node))};
 		script_ = &SceneType::acquire(&node);
-		assert (!script_->scene);
+		GDN_ASSERT (!script_->scene);
 		create(make_scene{&node, std::move(make.deleter)}, std::move(make.scene));
 		ref();
 	}
@@ -160,7 +164,7 @@ struct View {
 	// with it.
 	View(scene::open_t<NodeType, SceneArgs...>&& open) {
 		script_ = &SceneType::acquire(open.node);
-		assert (!script_->scene);
+		GDN_ASSERT  (!script_->scene);
 		create(open_scene{open.node}, std::move(open.args));
 		ref();
 	}
@@ -259,21 +263,21 @@ struct StaticView {
 	{
 	}
 	auto acquire() {
-		assert (node_);
+		GDN_ASSERT  (node_);
 		scene_ = {gdn::acquire{}, node_};
 	}
 	auto close() {
-		assert (node_);
+		GDN_ASSERT  (node_);
 		scene_ = {};
 	}
 	template <typename... Args>
 	auto open(Args&&... args) {
-		assert (node_);
+		GDN_ASSERT  (node_);
 		scene_ = gdn::View<SceneType>(gdn::scene::open(node_, std::forward<Args>(args)...));
 	}
 	template <typename... Args>
 	auto reopen(Args&&... args) {
-		assert (node_);
+		GDN_ASSERT  (node_);
 		scene_ = gdn::View<SceneType>(gdn::scene::reopen(node_, std::forward<Args>(args)...));
 	}
 	auto node() const { return node_; }
@@ -310,11 +314,11 @@ struct Script {
 	std::optional<SceneType> scene;
 private:
 	auto ref(View<SceneType>* ref) -> void {
-		assert (scene);
+		GDN_ASSERT  (scene);
 		refs_.insert(ref);
 	}
 	auto unref(View<SceneType>* ref) -> void {
-		assert (scene);
+		GDN_ASSERT  (scene);
 		refs_.erase(ref);
 		if (refs_.empty()) {
 			reset();
