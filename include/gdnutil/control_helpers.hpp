@@ -193,6 +193,16 @@ inline auto top(const godot::Rect2& r)
 	return r.position.y;
 }
 
+inline auto bottom_middle(const godot::Rect2& r)
+{
+	return r.position + godot::Vector2(r.size.width * 0.5f, r.size.height);
+}
+
+inline auto top_middle(const godot::Rect2& r)
+{
+	return r.position + godot::Vector2(r.size.width * 0.5f, 0.0f);
+}
+
 inline auto top_right(const godot::Rect2& r)
 {
 	return r.position + godot::Vector2 { r.size.width, 0.0f };
