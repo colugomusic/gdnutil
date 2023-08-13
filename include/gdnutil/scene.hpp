@@ -257,7 +257,7 @@ template <typename SceneType>
 struct StaticView {
 	using node_type = typename SceneType::node_type;
 	StaticView() = default;
-	StaticView(typename node_type* node) : node_{node} {}
+	StaticView(node_type* node) : node_{node} {}
 	StaticView(godot::Node* root, godot::NodePath path)
 		: node_{tree::require<node_type>(root, path)}
 	{
@@ -288,7 +288,7 @@ struct StaticView {
 	operator node_type*() const { return node_; }
 	operator gdn::View<SceneType>() const { return scene_; }
 private:
-	typename node_type* node_{};
+	node_type* node_{};
 	gdn::View<SceneType> scene_;
 };
 
