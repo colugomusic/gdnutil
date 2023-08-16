@@ -51,6 +51,11 @@ struct base_open_t {
 	make_scene_t<Ts...> args;
 };
 
+template <typename... Ts>
+struct open_singleton_t {
+	make_scene_t<Ts...> args;
+};
+
 template <typename NodeType, typename... Ts> struct open_t   : public base_open_t<NodeType, Ts...> {};
 template <typename NodeType, typename... Ts> struct reopen_t : public base_open_t<NodeType, Ts...> {};
 
@@ -81,6 +86,11 @@ auto make(MakeNode node, MakeScene scene) -> make_t<MakeNode, MakeScene> {
 template <typename NodeType, typename... Ts>
 auto open(NodeType* node, Ts... ts) -> open_t<NodeType, Ts...> {
 	return open_t<NodeType, Ts...>{ node, make_scene(std::move(ts)...)};
+}
+
+template <typename... Ts>
+auto open_singleton(Ts... ts) -> open_singleton_t<Ts...> {
+	return open_singleton_t<Ts...>{ make_scene(std::move(ts)...)};
 }
 
 template <typename NodeType, typename... Ts>
@@ -135,15 +145,15 @@ private:
 	friend struct Script<T>;
 };
 
-template <typename SceneType>
+template <typename UserScene>
 struct View {
-	using node_type  = typename SceneType::node_type;
-	using make_scene = typename SceneType::make;
-	using open_scene = typename SceneType::open;
+	using node_type  = typename UserScene::node_type;
+	using make_scene = typename UserScene::make;
+	using open_scene = typename UserScene::open;
 	View() = default;
 	// Acquire a view for an already created scene.
 	View(scene::acquire_t a) {
-		script_ = &SceneType::acquire(a.node);
+		script_ = &UserScene::acquire(a.node);
 		ref();
 	}
 	template <typename MkNode, typename MkScene>
@@ -152,7 +162,7 @@ struct View {
 	// it automatically when all views are destroyed.
 	View(scene::make_t<MkNode, MkScene>&& make) {
 		auto& node{create(std::move(make.node))};
-		script_ = &SceneType::acquire(&node);
+		script_ = &UserScene::acquire(&node);
 		GDN_ASSERT (!script_->scene);
 		create(make_scene{&node, std::move(make.deleter)}, std::move(make.scene));
 		ref();
@@ -163,7 +173,7 @@ struct View {
 	// The node must not already have a scene associated
 	// with it.
 	View(scene::open_t<NodeType, SceneArgs...>&& open) {
-		script_ = &SceneType::acquire(open.node);
+		script_ = &UserScene::acquire(open.node);
 		GDN_ASSERT  (!script_->scene);
 		create(open_scene{open.node}, std::move(open.args));
 		ref();
@@ -175,7 +185,7 @@ struct View {
 	// it then it is closed and the new scene takes its
 	// place.
 	View(scene::reopen_t<NodeType, SceneArgs...>&& open) {
-		script_ = &SceneType::acquire(open.node);
+		script_ = &UserScene::acquire(open.node);
 		if (script_->scene) {
 			script_->reset();
 		}
@@ -216,9 +226,9 @@ struct View {
 		return script_->ref_count();
 	}
 	auto& scene() { return script_->scene.value(); }
-	auto operator->() const -> SceneType* { return script_->scene.operator->(); }
-	auto operator*() -> SceneType& { return *script_->scene; }
-	auto operator*() const -> const SceneType& { return *script_->scene; }
+	auto operator->() const -> UserScene* { return script_->scene.operator->(); }
+	auto operator*() -> UserScene& { return *script_->scene; }
+	auto operator*() const -> const UserScene& { return *script_->scene; }
 	operator bool() const { return bool(script_); }
 	operator node_type*() const { return script_->scene->node; }
 private:
@@ -245,54 +255,15 @@ private:
 	// Crate the node
 	auto create(scene::make_node_t<Ts...>&& make) const -> node_type& {
 		auto fn = [](auto&&...args) -> decltype(auto) {
-			return SceneType::make_node(std::move(args)...);
+			return UserScene::make_node(std::move(args)...);
 		};
 		return std::apply(std::move(fn), std::move(make.args));
 	}
-	Script<SceneType>* script_{};
-	friend struct Script<SceneType>;
+	Script<UserScene>* script_{};
+	friend struct Script<UserScene>;
 };
 
-template <typename SceneType>
-struct StaticView {
-	using node_type = typename SceneType::node_type;
-	StaticView() = default;
-	StaticView(node_type* node) : node_{node} {}
-	StaticView(godot::Node* root, godot::NodePath path)
-		: node_{tree::require<node_type>(root, path)}
-	{
-	}
-	auto acquire() {
-		GDN_ASSERT  (node_);
-		scene_ = {gdn::acquire{}, node_};
-	}
-	auto close() {
-		GDN_ASSERT  (node_);
-		scene_ = {};
-	}
-	template <typename... Args>
-	auto open(Args&&... args) {
-		GDN_ASSERT  (node_);
-		scene_ = gdn::View<SceneType>(gdn::scene::open(node_, std::forward<Args>(args)...));
-	}
-	template <typename... Args>
-	auto reopen(Args&&... args) {
-		GDN_ASSERT  (node_);
-		scene_ = gdn::View<SceneType>(gdn::scene::reopen(node_, std::forward<Args>(args)...));
-	}
-	auto node() const { return node_; }
-	auto operator->() const -> SceneType* { return scene_.operator->(); }
-	auto operator*() -> SceneType& { return *scene_.; }
-	auto operator*() const -> const SceneType& { return *scene_; }
-	operator bool() const { return node_ && scene_; }
-	operator node_type*() const { return node_; }
-	operator gdn::View<SceneType>() const { return scene_; }
-private:
-	node_type* node_{};
-	gdn::View<SceneType> scene_;
-};
-
-template <typename SceneType>
+template <typename UserScene>
 struct Script {
 	~Script() {
 		if (scene) {
@@ -311,13 +282,13 @@ struct Script {
 		std::invoke(std::forward<Fn>(fn), *scene, std::forward<Args>(args)...);
 	}
 	auto ref_count() const { return refs_.size(); }
-	std::optional<SceneType> scene;
+	std::optional<UserScene> scene;
 private:
-	auto ref(View<SceneType>* ref) -> void {
+	auto ref(View<UserScene>* ref) -> void {
 		GDN_ASSERT  (scene);
 		refs_.insert(ref);
 	}
-	auto unref(View<SceneType>* ref) -> void {
+	auto unref(View<UserScene>* ref) -> void {
 		GDN_ASSERT  (scene);
 		refs_.erase(ref);
 		if (refs_.empty()) {
@@ -337,13 +308,32 @@ private:
 		}
 		scene.reset();
 	}
-	std::set<View<SceneType>*> refs_;
-	friend struct View<SceneType>;
+	std::set<View<UserScene>*> refs_;
+	friend struct View<UserScene>;
 };
 
-template <typename SceneType>
-auto acquire(godot::Node* node) -> gdn::Script<SceneType>& {
-	return *reinterpret_cast<gdn::Script<SceneType>*>(Object::cast_to<typename SceneType::script_type>(node));
+template <typename UserScene>
+struct SingletonView {
+	using node_type = typename UserScene::node_type;
+	SingletonView() = default;
+	template <typename... Ts>
+	SingletonView(scene::open_singleton_t<Ts...> open)
+		: view_{scene::reopen_t<node_type, Ts...>{&node(), std::move(open.args)}}
+	{
+	}
+	auto operator*() -> UserScene& { return *view_.; }
+	auto operator*() const -> const UserScene& { return *view_; }
+	auto operator->() const -> UserScene* { return view_.operator->(); }
+	operator bool() const { return bool(view_); }
+	operator gdn::View<UserScene>() const { return view_; }
+	static auto& node() { return UserScene::singleton(); }
+private:
+	View<UserScene> view_;
+};
+
+template <typename UserScene>
+auto acquire(godot::Node* node) -> gdn::Script<UserScene>& {
+	return *reinterpret_cast<gdn::Script<UserScene>*>(Object::cast_to<typename UserScene::script_type>(node));
 }
 
 template <typename NodeType, typename Body>
