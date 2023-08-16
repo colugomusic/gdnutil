@@ -30,3 +30,11 @@
 	GDN_CLASS(Name, NodeType); \
 	public: \
 	auto _init() {}
+
+#define GDN_SINGLETON_SCRIPT(Name, NodeType) \
+	GDN_CLASS(Name, NodeType); \
+	private:\
+	static inline Name* singleton_{}; \
+	public: \
+	static auto& singleton() { return *singleton_; }\
+	auto _init() -> void { singleton_ = this; }
