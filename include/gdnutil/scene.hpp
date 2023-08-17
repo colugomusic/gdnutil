@@ -226,6 +226,7 @@ struct View {
 		return script_->ref_count();
 	}
 	auto& scene() { return script_->scene.value(); }
+	auto& scene() const { return script_->scene.value(); }
 	auto operator->() const -> UserScene* { return script_->scene.operator->(); }
 	auto operator*() -> UserScene& { return *script_->scene; }
 	auto operator*() const -> const UserScene& { return *script_->scene; }
@@ -321,6 +322,8 @@ struct SingletonView {
 		: view_{scene::reopen_t<node_type, Ts...>{&node(), std::move(open.args)}}
 	{
 	}
+	auto& scene() { return view_.scene(); }
+	auto& scene() const { return view_.scene(); }
 	auto operator*() -> UserScene& { return *view_.; }
 	auto operator*() const -> const UserScene& { return *view_; }
 	auto operator->() const -> UserScene* { return view_.operator->(); }
