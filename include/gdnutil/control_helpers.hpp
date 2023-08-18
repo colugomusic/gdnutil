@@ -1,10 +1,31 @@
 #pragma once
 
-#pragma warning(push, 0)
 #include <Control.hpp>
-#pragma warning(pop)
+#include <OS.hpp>
 
 namespace gdn {
+
+inline auto keep_on_screen(godot::Rect2 rect) -> godot::Rect2 {
+	const auto os          = godot::OS::get_singleton();
+	const auto window_size = os->get_window_size();
+	if (rect.position.x < 0) {
+		rect.position.x = 0;
+	}
+	if (rect.position.y < 0) {
+		rect.position.y = 0;
+	}
+	if (rect.position.x + rect.size.width > window_size.width) {
+		rect.position.x = window_size.width - rect.size.width;
+	}
+	if (rect.position.y + rect.size.height > window_size.height) {
+		rect.position.y = window_size.height - rect.size.height;
+	}
+	return rect;
+}
+
+inline auto keep_on_screen(godot::Control* c) -> void {
+	c->set_global_position(keep_on_screen(c->get_global_rect()).position);
+}
 
 inline bool is_hovered(const godot::Control* c) {
 	return
