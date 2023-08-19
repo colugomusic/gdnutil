@@ -324,7 +324,7 @@ struct SingletonView {
 	}
 	auto& scene() { return view_.scene(); }
 	auto& scene() const { return view_.scene(); }
-	auto operator*() -> UserScene& { return *view_.; }
+	auto operator*() -> UserScene& { return *view_; }
 	auto operator*() const -> const UserScene& { return *view_; }
 	auto operator->() const -> UserScene* { return view_.operator->(); }
 	operator bool() const { return bool(view_); }
