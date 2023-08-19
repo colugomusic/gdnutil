@@ -336,7 +336,7 @@ private:
 
 template <typename UserScene>
 auto acquire(godot::Node* node) -> gdn::Script<UserScene>& {
-	return *reinterpret_cast<gdn::Script<UserScene>*>(Object::cast_to<typename UserScene::script_type>(node));
+	return *reinterpret_cast<gdn::Script<UserScene>*>(godot::Object::cast_to<typename UserScene::script_type>(node));
 }
 
 template <typename NodeType, typename Body>
