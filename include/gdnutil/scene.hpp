@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <functional>
 #include <memory>
@@ -225,9 +226,9 @@ struct View {
 		}
 		return script_->ref_count();
 	}
-	auto& scene() { return script_->scene.value(); }
-	auto& scene() const { return script_->scene.value(); }
-	auto operator->() const -> UserScene* { return script_->scene.operator->(); }
+	auto& scene() { return *script_->scene; }
+	auto& scene() const { return *script_->scene; }
+	auto operator->() const -> UserScene* { return script_->scene; }
 	auto operator*() -> UserScene& { return *script_->scene; }
 	auto operator*() const -> const UserScene& { return *script_->scene; }
 	operator bool() const { return bool(script_); }
@@ -248,7 +249,7 @@ private:
 	// Create the scene in either "Make" mode or "Open" mode
 	auto create(Mode&& mode, scene::make_scene_t<Ts...>&& make) -> void {
 		auto fn = [mode, script = script_](auto&&...args) {
-			script->scene.emplace(mode, std::move(args)...);
+			script->construct_scene(mode, std::move(args)...);
 		};
 		std::apply(std::move(fn), std::move(make.args));
 	}
@@ -266,6 +267,11 @@ private:
 
 template <typename UserScene>
 struct Script {
+private:
+	template <typename T, size_t N>
+	struct alignas(alignof(T)) aligned_array_t : public std::array<T, N> {};
+	using storage_t = aligned_array_t<std::byte, sizeof(UserScene)>;
+public:
 	~Script() {
 		if (scene) {
 			scene->root = nullptr;
@@ -274,6 +280,7 @@ struct Script {
 		for (const auto ref : refs_) {
 			ref->script_ = nullptr;
 		}
+		destroy_scene();
 	}
 	template <typename Fn, typename... Args>
 	auto scene_invoke(Fn&& fn, Args&&... args) -> void {
@@ -283,8 +290,14 @@ struct Script {
 		std::invoke(std::forward<Fn>(fn), *scene, std::forward<Args>(args)...);
 	}
 	auto ref_count() const { return refs_.size(); }
-	std::optional<UserScene> scene;
+	UserScene* scene{nullptr};
 private:
+	template <typename... Args>
+	auto construct_scene(Args&&... args) -> UserScene* {
+		::new(std::addressof(scene_storage_)) UserScene{std::forward<Args>(args)...};
+		scene = reinterpret_cast<UserScene*>(std::addressof(scene_storage_));
+		return scene;
+	}
 	auto ref(View<UserScene>* ref) -> void {
 		GDN_ASSERT  (scene);
 		refs_.insert(ref);
@@ -299,17 +312,24 @@ private:
 	auto reset() -> void {
 		godot::Node* node_to_free{scene->owning_ ? scene->node : nullptr};
 		if (node_to_free) {
-			auto deleter{scene.value().deleter_};
-			scene.reset();
+			auto deleter{scene->deleter_};
+			destroy_scene();
 			deleter(node_to_free);
 			return;
 		}
 		for (const auto ref : refs_) {
 			ref->script_ = nullptr;
 		}
-		scene.reset();
+		destroy_scene();
+	}
+	auto destroy_scene() -> void {
+		if (scene) {
+			scene->~UserScene();
+			scene = nullptr;
+		}
 	}
 	std::set<View<UserScene>*> refs_;
+	storage_t scene_storage_;
 	friend struct View<UserScene>;
 };
 
