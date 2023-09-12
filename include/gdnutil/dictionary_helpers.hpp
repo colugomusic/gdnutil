@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <optional>
+#include <stdexcept>
 #include <vector>
 #include <Array.hpp>
 #include <Dictionary.hpp>
@@ -302,6 +303,20 @@ static auto write_if_has_value(godot::String key, godot::Dictionary value, godot
 	{
 		(*data)[key] = value;
 	}
+}
+
+inline auto get_first_key(godot::Dictionary d) -> godot::Variant {
+	if (d.keys().empty()) {
+		return {};
+	}
+	return d.keys()[0];
+}
+
+inline auto must_get_first_key(godot::Dictionary d) -> godot::Variant {
+	if (auto key = get_first_key(d)) {
+		return key;
+	}
+	throw std::runtime_error("Expected a key but couldn't find one");
 }
 
 namespace json {
