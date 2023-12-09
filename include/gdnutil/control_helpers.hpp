@@ -195,6 +195,10 @@ inline void set_y(godot::Control* c, float y)
 
 namespace rect {
 
+inline auto center(const godot::Rect2& r) {
+	return r.position + (r.size * 0.5f);
+}
+
 inline auto bottom(const godot::Rect2& r)
 {
 	return r.position.y + r.size.height;
