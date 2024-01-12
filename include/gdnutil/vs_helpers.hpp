@@ -10,8 +10,8 @@ using server = godot::VisualServer;
 struct auto_rid {
 	auto_rid() = default;
 	auto_rid(server* vs, godot::RID rid) : vs_{vs}, rid_{rid} {}
-	auto_rid(const auto_rid&) = default;
-	auto_rid& operator=(const auto_rid&) = default;
+	auto_rid(const auto_rid&) = delete;
+	auto_rid& operator=(const auto_rid&) = delete;
 	~auto_rid() { if (rid_.is_valid()) { vs_->free_rid(rid_); } }
 	auto_rid(auto_rid&& rhs) noexcept
 		: vs_{rhs.vs_}
@@ -29,6 +29,14 @@ struct auto_rid {
 private:
 	server* vs_{};
 	godot::RID rid_;
+};
+
+struct canvas {
+	canvas() = default;
+	canvas(server* vs) : rid_{vs, vs->canvas_create()} {}
+	operator godot::RID() const { return rid_; }
+private:
+	auto_rid rid_;
 };
 
 struct canvas_item {
@@ -50,6 +58,14 @@ private:
 struct shader {
 	shader() = default;
 	shader(server* vs) : rid_{vs, vs->shader_create()} {}
+	operator godot::RID() const { return rid_; }
+private:
+	auto_rid rid_;
+};
+
+struct viewport {
+	viewport() = default;
+	viewport(server* vs) : rid_{vs, vs->viewport_create()} {}
 	operator godot::RID() const { return rid_; }
 private:
 	auto_rid rid_;
