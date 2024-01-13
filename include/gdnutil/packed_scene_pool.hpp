@@ -32,16 +32,17 @@ namespace gdn {
 // 
 struct PackedScenePool {
     PackedScenePool() = default;
-    PackedScenePool(godot::String scene_path, godot::Node* initial_parent, size_t initial_size)
+    PackedScenePool(godot::String scene_path, godot::Node* initial_parent, size_t initial_size, size_t increment = 10)
         : scene_{godot::ResourceLoader::get_singleton()->load(scene_path)}
         , initial_parent_{initial_parent}
         , target_size_{initial_size}
+        , increment_{increment}
     {
         assert (scene_.is_valid());
     }
     auto acquire() -> godot::Node* {
         assert (scene_.is_valid());
-        if (++acquire_count_ > target_size_ / 2) {
+        if (++acquire_count_ > target_size_ - increment_) {
             increase_target_size();
         }
         if (pool_.empty()) {
@@ -59,18 +60,22 @@ struct PackedScenePool {
     }
     // If you call this from time to time then
     // the scene pool will refill itself
-    auto process(int chunk_size = 1) -> void {
+    // Returns: True if any nodes were added to the pool
+    auto process(int chunk_size = 1) -> bool {
+        int added = 0;
         while (chunk_size-- > 0) {
             if (pool_.size() >= target_size_) {
-                return;
+                return added;
             }
             pool_.push_back(make_new_instance());
+            added++;
         }
+        return added > 0;
     }
     auto get_pool_size() const { return pool_.size(); }
 private:
 	auto increase_target_size() -> void {
-        set_target_size(target_size_ * 2);
+        set_target_size(target_size_ + increment_);
     }
     auto make_new_instance() -> godot::Node* {
 		const auto out = scene_->instance();
@@ -86,6 +91,7 @@ private:
     godot::Node* initial_parent_;
     size_t target_size_;
     size_t acquire_count_{0};
+    size_t increment_;
 };
 
 } // gdn
