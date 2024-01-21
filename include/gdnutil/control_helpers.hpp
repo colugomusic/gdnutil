@@ -303,7 +303,7 @@ inline void set_y(godot::Control* c, float y)
 	c->set_position({ c->get_position().x, y });
 }
 
-inline void bring_to_front(godot::Control* c)
+inline void bring_to_front(godot::Node* c)
 {
 	c->get_parent()->move_child(c, c->get_parent()->get_child_count());
 }
