@@ -141,8 +141,7 @@ inline auto center(const godot::Control* c)
 	return c->get_global_position() + (c->get_size() * 0.5f);
 }
 
-inline auto left_middle(const godot::Control* c)
-{
+inline auto left_middle(const godot::Control* c) {
 	return c->get_global_position() + godot::Vector2(0.0f, height(c) * 0.5f);
 }
 
@@ -199,46 +198,41 @@ inline auto center(const godot::Rect2& r) {
 	return r.position + (r.size * 0.5f);
 }
 
-inline auto bottom(const godot::Rect2& r)
-{
+inline auto bottom(const godot::Rect2& r) {
 	return r.position.y + r.size.height;
 }
 
-inline auto left(const godot::Rect2& r)
-{
+inline auto left(const godot::Rect2& r) {
 	return r.position.x;
 }
 
-inline auto right(const godot::Rect2& r)
-{
+inline auto left_middle(const godot::Rect2& r) {
+	return r.position + godot::Vector2(0.0f, r.size.height * 0.5f);
+}
+
+inline auto right(const godot::Rect2& r) {
 	return r.position.x + r.size.width;
 }
 
-inline auto top(const godot::Rect2& r)
-{
+inline auto top(const godot::Rect2& r) {
 	return r.position.y;
 }
 
-inline auto bottom_middle(const godot::Rect2& r)
-{
+inline auto bottom_middle(const godot::Rect2& r) {
 	return r.position + godot::Vector2(r.size.width * 0.5f, r.size.height);
 }
 
-inline auto top_middle(const godot::Rect2& r)
-{
+inline auto top_middle(const godot::Rect2& r) {
 	return r.position + godot::Vector2(r.size.width * 0.5f, 0.0f);
 }
 
-inline auto top_right(const godot::Rect2& r)
-{
+inline auto top_right(const godot::Rect2& r) {
 	return r.position + godot::Vector2 { r.size.width, 0.0f };
 }
 
-inline auto add(godot::Rect2 a, godot::Rect2 b)
-{
+inline auto add(godot::Rect2 a, godot::Rect2 b) {
 	a.size += b.size;
-	a.position += b.position;
-
+	a.position += b.position; 
 	return a;
 }
 
