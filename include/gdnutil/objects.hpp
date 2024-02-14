@@ -7,8 +7,15 @@ namespace gdn {
 
 template <typename T> [[nodiscard]]
 auto find_instance(godot_int id) -> T* {
-	const auto obj = godot::detail::get_wrapper<godot::Object>(godot::core_1_2_api->godot_instance_from_id(id));
-	return godot::Object::cast_to<T>(obj);
+	const auto obj = godot::core_1_2_api->godot_instance_from_id(id);
+	if (!obj) {
+		return nullptr;
+	}
+	const auto wrapper = godot::detail::get_wrapper<godot::Object>(obj);
+	if (!wrapper) {
+		return nullptr;
+	}
+	return godot::Object::cast_to<T>(wrapper);
 }
 
 } // gdn
