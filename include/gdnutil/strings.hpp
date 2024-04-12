@@ -15,6 +15,7 @@ STRING(custom_action);
 STRING(dir_selected);
 STRING(draw);
 STRING(file_selected);
+STRING(files_dropped);
 STRING(files_selected);
 STRING(focus_entered);
 STRING(focus_exited);
