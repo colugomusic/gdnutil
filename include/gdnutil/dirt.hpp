@@ -16,9 +16,10 @@ public:
 		return *this;
 	}
 	auto set_dirty() -> void {
-		assert (parent_);
 		dirty_ = true;
-		parent_->update();
+		if (parent_) {
+			parent_->update();
+		}
 	}
 	auto check_and_reset() -> bool {
 		const auto out{dirty_};
