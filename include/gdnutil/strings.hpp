@@ -23,6 +23,7 @@ STRING(gui_input);
 STRING(id_pressed);
 STRING(item_edited);
 STRING(item_rect_changed);
+STRING(item_selected);
 STRING(minimum_size_changed);
 STRING(mouse_entered);
 STRING(mouse_exited);
