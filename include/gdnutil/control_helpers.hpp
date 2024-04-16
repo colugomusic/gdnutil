@@ -239,6 +239,31 @@ inline auto add(godot::Rect2 a, godot::Rect2 b) {
 	return a;
 }
 
+inline
+auto distance_to(godot::Rect2 rect, godot::Vector2 point) -> float {
+	const auto bottom       = rect.position.y + rect.size.y;
+	const auto bottom_left  = rect.position + Vector2{0, rect.size.y};
+	const auto bottom_right = rect.position + rect.size;
+	const auto left         = rect.position.x;
+	const auto right        = rect.position.x + rect.size.x;
+	const auto top          = rect.position.y;
+	const auto top_left     = rect.position;
+	const auto top_right    = rect.position + Vector2{rect.size.x, 0};
+	if (point.x < left) {
+		if (point.y < top)    { return point.distance_to(top_left); }
+		if (point.y > bottom) { return point.distance_to(bottom_right); }
+		else                  { return left - point.x; }
+	}
+	if (point.x > right) {
+		if (point.y < top)    { return point.distance_to(top_right); }
+		if (point.y > bottom) { return point.distance_to(bottom_right); }
+		else                  { return point.x - right; }
+	}
+	if (point.y < top)    { return top - point.y; }
+	if (point.y > bottom) { return point.y - bottom; }
+	return 0.0f;
+}
+
 } // rect
 
 inline void nudge(godot::Control* c, godot::Vector2 amount)
