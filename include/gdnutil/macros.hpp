@@ -15,26 +15,17 @@
 #define GDN_VIRTUAL_SLOT(Name, Args) static constexpr auto Name = "_"#Name; virtual void _##Name Args
 #define GDN_PROPERTY(Type, Name) Type Name##_
 #define GDN_GET_NODE(Parent, Type, Name) Name = gdn::tree::get<Type>(Parent, #Name)
-#define GDN_CLASS(Name, Base) GODOT_CLASS(Name, Base); using GDN_THIS_CLASS = Name
 #define GDN_REG_SIGNAL(Args) godot::register_signal<GDN_THIS_CLASS> Args
+
+#define GDN_CLASS(Name, Base) \
+	GODOT_CLASS(Name, Base); \
+	using GDN_THIS_CLASS = Name; \
+	public: \
 
 #define GDN_SINGLETON_CLASS(Name, Base) \
 	GDN_CLASS(Name, Base); \
+	private: \
+	static inline Name* i_{}; \
 	public: \
 	static auto& i() { return *i_; }\
-	auto _init() -> void { i_ = this; }\
-	private:\
-	static inline Name* i_{}
-
-#define GDN_SCRIPT(Name, NodeType) \
-	GDN_CLASS(Name, NodeType); \
-	public: \
-	auto _init() {}
-
-#define GDN_SINGLETON_SCRIPT(Name, NodeType) \
-	GDN_CLASS(Name, NodeType); \
-	private:\
-	static inline Name* singleton_{}; \
-	public: \
-	static auto& singleton() { return *singleton_; }\
-	auto _init() -> void { singleton_ = this; }
+	auto _init() -> void { i_ = this; }
