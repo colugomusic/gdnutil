@@ -21,6 +21,7 @@ STRING(focus_entered);
 STRING(focus_exited);
 STRING(gui_input);
 STRING(id_pressed);
+STRING(item_activated);
 STRING(item_edited);
 STRING(item_rect_changed);
 STRING(item_selected);
