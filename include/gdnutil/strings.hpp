@@ -13,6 +13,8 @@ STRING(color_changed);
 STRING(confirmed);
 STRING(custom_action);
 STRING(dir_selected);
+STRING(drag_ended);
+STRING(drag_started);
 STRING(draw);
 STRING(file_selected);
 STRING(files_dropped);
