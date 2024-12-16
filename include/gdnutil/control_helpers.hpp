@@ -32,6 +32,7 @@ auto keep_on_screen(godot::Control* c, float margin = 0.0f) -> void {
 [[nodiscard]] inline
 auto is_hovered(const godot::Control* c) -> bool {
 	return
+		c &&
 		c->is_visible_in_tree() &&
 		c->get_global_rect().has_point(c->get_global_mouse_position());
 }
