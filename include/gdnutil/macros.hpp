@@ -21,9 +21,11 @@
 	GODOT_CLASS(Name, Base); \
 	using GDN_THIS_CLASS = Name; \
 	public: \
+	auto _init() -> void {}
 
 #define GDN_SINGLETON_CLASS(Name, Base) \
-	GDN_CLASS(Name, Base); \
+	GODOT_CLASS(Name, Base); \
+	using GDN_THIS_CLASS = Name; \
 	private: \
 	static inline Name* i_{}; \
 	public: \

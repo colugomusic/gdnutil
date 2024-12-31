@@ -22,8 +22,6 @@ public:
 		control->connect(visibility_changed, this, on_visibility_changed, godot::Array::make(control));
 	}
 
-	auto _init() -> void {}
-
 private:
 
 	GDN_SIGNAL(visibility_changed);
