@@ -31,3 +31,11 @@
 	public: \
 	static auto& i() { return *i_; }\
 	auto _init() -> void { i_ = this; }
+
+#define GDN_SINGLETON_CLASS2(Name, Base) \
+	GODOT_CLASS(Name##_node, Base); \
+	using GDN_THIS_CLASS = Name##_node; \
+	public: \
+	ctrl::Name::impl i; \
+	auto _init() -> void { ctrl::Name::on_init(&i); }
+

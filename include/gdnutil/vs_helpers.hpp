@@ -26,6 +26,7 @@ struct auto_rid {
 		return *this;
 	}
 	operator godot::RID() const { return rid_; }
+	explicit operator bool() const { return rid_.is_valid(); }
 private:
 	server* vs_{};
 	godot::RID rid_;
@@ -43,6 +44,7 @@ struct canvas_item {
 	canvas_item() = default;
 	canvas_item(server* vs) : rid_{vs, vs->canvas_item_create()} {}
 	operator godot::RID() const { return rid_; }
+	explicit operator bool() const { return bool(rid_); }
 private:
 	auto_rid rid_;
 };
