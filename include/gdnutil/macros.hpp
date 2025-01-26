@@ -46,8 +46,22 @@
 	ctrl::Name::impl i; \
 	auto _init() -> void { ctrl::Name::on_init(&i); }
 
+#define GDN_NODE(Name, Base) \
+	GODOT_CLASS(Name##_node, Base); \
+	using GDN_THIS_CLASS = Name##_node; \
+	public: \
+	node::Name::node n; \
+	auto _init() -> void {}
+
+#define GDN_SINGLETON_NODE(Name, Base) \
+	GODOT_CLASS(Name##_node, Base); \
+	using GDN_THIS_CLASS = Name##_node; \
+	public: \
+	node::Name::node n; \
+	auto _init() -> void { node::Name::on_init(&n); }
+
 #define GDN_REG_CONTROL(Name) \
-	auto register_##Name() -> bool { \
+	inline auto register_##Name() -> bool { \
 		godot::register_class<Name##_node>(); \
 		return true; \
 	} \
