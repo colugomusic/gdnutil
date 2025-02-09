@@ -59,7 +59,7 @@
 	public: \
 	node::Name::node n; \
 	static inline Name##_node* singleton = nullptr; \
-	auto _init() -> void { singleton = this; node::Name::detail::on_init(&n); }
+	auto _init() -> void { singleton = this; node::Name::n = &n; }
 
 #define GDN_REG_CONTROL(Name) \
 	inline auto register_##Name() -> bool { \
