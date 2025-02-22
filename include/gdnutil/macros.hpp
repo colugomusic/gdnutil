@@ -47,18 +47,18 @@
 	auto _init() -> void { ctrl::Name::on_init(&i); }
 
 #define GDN_NODE(Name, Base) \
-	GODOT_CLASS(Name##_node, Base); \
-	using GDN_THIS_CLASS = Name##_node; \
+	GODOT_CLASS(Name##_gdns, Base); \
+	using GDN_THIS_CLASS = Name##_gdns; \
 	public: \
 	node::Name::node n; \
 	auto _init() -> void {}
 
 #define GDN_SINGLETON_NODE(Name, Base) \
-	GODOT_CLASS(Name##_node, Base); \
-	using GDN_THIS_CLASS = Name##_node; \
+	GODOT_CLASS(Name##_gdns, Base); \
+	using GDN_THIS_CLASS = Name##_gdns; \
 	public: \
 	node::Name::node n; \
-	static inline Name##_node* singleton = nullptr; \
+	static inline Name##_gdns* singleton = nullptr; \
 	auto _init() -> void { singleton = this; node::Name::n = &n; }
 
 #define GDN_REG_CONTROL(Name) \
