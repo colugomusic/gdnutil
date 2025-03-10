@@ -142,29 +142,17 @@ static auto get(godot::Dictionary data, godot::String key) -> T
 	return get<Getter>(data, key, identity<T>{});
 }
 
-template <typename T, typename Getter>
-static auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void
-{
-	if (data.has(key))
-	{
-		*out = get<T, Getter>(data, key);
+template <typename T, typename Getter> [[nodiscard]]
+auto read_if_exists(godot::String key, godot::Dictionary data) -> std::optional<T> {
+	if (data.has(key)) {
+		return get<T, Getter>(data, key);
 	}
-}
-
-template <typename T, typename Getter>
-static auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void
-{
-	if (data.has(key))
-	{
-		*out = get<T, Getter>(data, key);
-	}
+	return std::nullopt;
 }
 
 template <typename T, typename Visitor, typename Getter>
-static auto visit_array(godot::Array array, Visitor visitor) -> void
-{
-	for (int i = 0; i < array.size(); i++)
-	{
+static auto visit_array(godot::Array array, Visitor visitor) -> void {
+	for (int i = 0; i < array.size(); i++) {
 		visitor(get<T, Getter>(array, i));
 	}
 }
@@ -228,16 +216,23 @@ static auto get(godot::Array array, int index) -> T
 	return detail::get<T, detail::getter>(array, index);
 }
 
-template <typename T>
-static auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void
-{
-	return detail::read_if_exists<T, detail::getter>(key, data, out);
+template <typename T> [[nodiscard]]
+auto read_if_exists(godot::String key, godot::Dictionary data) -> std::optional<T> {
+	return detail::read_if_exists<T, detail::getter>(key, data);
 }
 
 template <typename T>
-static auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void
-{
-	return detail::read_if_exists<T, detail::getter>(key, data, out);
+auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void {
+	if (const auto value = read_if_exists<T, detail::getter>(key, data)) {
+		*out = *value;
+	}
+}
+
+template <typename T>
+auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void {
+	if (const auto value = read_if_exists<T, detail::getter>(key, data)) {
+		out = value;
+	}
 }
 
 template <typename T> static auto from_string(godot::String str) -> T;
@@ -333,21 +328,23 @@ static auto get(godot::Array array, int index) -> T
 	return detail::get<T, detail::json_getter>(array, index);
 }
 
-template <typename T>
-static auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void
-{
-	return detail::read_if_exists<T, detail::json_getter>(key, data, out);
+template <typename T> [[nodiscard]]
+auto read_if_exists(godot::String key, godot::Dictionary data) -> std::optional<T> {
+	return detail::read_if_exists<T, detail::json_getter>(key, data);
 }
 
-template <typename T>
-static auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void
-{
-	return detail::read_if_exists<T, detail::json_getter>(key, data, out);
+template <typename T> [[nodiscard]]
+auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void {
+	detail::read_if_exists<T, detail::json_getter>(key, data, out);
 }
 
-template <typename T, typename Visitor>
-static auto visit_array(godot::Array array, Visitor visitor) -> void
-{
+template <typename T> [[nodiscard]]
+auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void {
+	detail::read_if_exists<T, detail::json_getter>(key, data, out);
+}
+
+template <typename T, typename Visitor> static
+auto visit_array(godot::Array array, Visitor visitor) -> void {
 	return detail::visit_array<T, Visitor, detail::json_getter>(array, visitor);
 }
 
