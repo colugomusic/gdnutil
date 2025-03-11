@@ -223,23 +223,22 @@ auto read_if_exists(godot::String key, godot::Dictionary data) -> std::optional<
 
 template <typename T>
 auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void {
-	if (const auto value = read_if_exists<T, detail::getter>(key, data)) {
+	if (const auto value = detail::read_if_exists<T, detail::getter>(key, data)) {
 		*out = *value;
 	}
 }
 
 template <typename T>
 auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void {
-	if (const auto value = read_if_exists<T, detail::getter>(key, data)) {
+	if (const auto value = detail::read_if_exists<T, detail::getter>(key, data)) {
 		out = value;
 	}
 }
 
 template <typename T> static auto from_string(godot::String str) -> T;
-template <> auto from_string<int64_t>(godot::String str) -> int64_t
-{
-	assert (str.is_valid_integer());
 
+template <> auto from_string<int64_t>(godot::String str) -> int64_t {
+	assert (str.is_valid_integer()); 
 	return str.to_int();
 }
 
@@ -335,12 +334,14 @@ auto read_if_exists(godot::String key, godot::Dictionary data) -> std::optional<
 
 template <typename T> [[nodiscard]]
 auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void {
-	detail::read_if_exists<T, detail::json_getter>(key, data, out);
+	if (const auto value = detail::read_if_exists<T, detail::json_getter>(key, data)) {
+		*out = *value;
+	}
 }
 
 template <typename T> [[nodiscard]]
 auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void {
-	detail::read_if_exists<T, detail::json_getter>(key, data, out);
+	*out = detail::read_if_exists<T, detail::json_getter>(key, data);
 }
 
 template <typename T, typename Visitor> static
