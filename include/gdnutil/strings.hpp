@@ -23,6 +23,7 @@ STRING(focus_entered);
 STRING(focus_exited);
 STRING(gui_input);
 STRING(id_pressed);
+STRING(idle_frame);
 STRING(index_pressed);
 STRING(item_activated);
 STRING(item_edited);
