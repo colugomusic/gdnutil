@@ -1,7 +1,9 @@
 #pragma once
 
+#include "hacks.hpp"
 #include <cassert>
 #include <memory>
+#include <stdexcept>
 #include <Engine.hpp>
 #include <Godot.hpp>
 #include <Node.hpp>
@@ -52,16 +54,18 @@ auto get(godot::Node* parent, godot::NodePath path, T** out) -> void {
 
 template <class T>
 T* require(godot::Node* parent, godot::NodePath path) {
-	const auto out { get<T>(parent, path) };
-	assert (out);
-	return out;
+	if (const auto out = get<T>(parent, path)) {
+		return out;
+	}
+	throw std::runtime_error(hacks::to_utf8(godot::String{"Node not found: '{0}'"}.format(godot::Array::make(path))));
 }
 
 template <class T>
 T* require(godot::NodePath path) {
-	const auto out { get<T>(path) };
-	assert (out);
-	return out;
+	if (const auto node = get<T>(path)) {
+		return node;
+	}
+	throw std::runtime_error(hacks::to_utf8(godot::String{"Node not found: '{0}'"}.format(godot::Array::make(path))));
 }
 
 template <class T>
