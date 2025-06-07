@@ -332,14 +332,14 @@ auto read_if_exists(godot::String key, godot::Dictionary data) -> std::optional<
 	return detail::read_if_exists<T, detail::json_getter>(key, data);
 }
 
-template <typename T> [[nodiscard]]
+template <typename T>
 auto read_if_exists(godot::String key, godot::Dictionary data, T* out) -> void {
 	if (const auto value = detail::read_if_exists<T, detail::json_getter>(key, data)) {
 		*out = *value;
 	}
 }
 
-template <typename T> [[nodiscard]]
+template <typename T>
 auto read_if_exists(godot::String key, godot::Dictionary data, std::optional<T>* out) -> void {
 	*out = detail::read_if_exists<T, detail::json_getter>(key, data);
 }
