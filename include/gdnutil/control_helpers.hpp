@@ -214,6 +214,10 @@ inline auto left_middle(const godot::Rect2& r) {
 	return r.position + godot::Vector2(0.0f, r.size.height * 0.5f);
 }
 
+inline auto bottom_right(const godot::Rect2& r) {
+	return r.position + r.size;
+}
+
 inline auto right(const godot::Rect2& r) {
 	return r.position.x + r.size.width;
 }
