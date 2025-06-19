@@ -48,6 +48,12 @@ auto is_key_pressed(Ref<InputEvent> event, int64_t scancode) -> bool {
 }
 
 [[nodiscard]] inline
+auto is_mb_any_pressed(Ref<InputEvent> event) -> bool {
+	const Ref<InputEventMouseButton> mb = event;
+	return mb.is_valid() && mb->is_pressed();
+}
+
+[[nodiscard]] inline
 auto is_mb_left_pressed(Ref<InputEvent> event) -> bool {
 	const Ref<InputEventMouseButton> mb = event;
 	return mb.is_valid() && mb->get_button_index() == GlobalConstants::BUTTON_LEFT && mb->is_pressed();
