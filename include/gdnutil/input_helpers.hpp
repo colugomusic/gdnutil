@@ -20,6 +20,15 @@ auto get_key_pressed(Ref<InputEvent> event, int64_t scancode) -> std::optional<b
 }
 
 [[nodiscard]] inline
+auto get_key_pressed_no_echo(Ref<InputEvent> event, int64_t scancode) -> std::optional<bool> {
+	const Ref<InputEventKey> key = event;
+	if (key.is_valid() && key->get_scancode() == scancode && !key->is_echo()) {
+		return key->is_pressed();
+	}
+	return std::nullopt;
+}
+
+[[nodiscard]] inline
 auto is_mm(Ref<InputEvent> event) -> bool {
 	const Ref<InputEventMouseMotion> mm = event;
 	return mm.is_valid();
