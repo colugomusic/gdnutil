@@ -63,11 +63,21 @@ auto is_mb_any_pressed(Ref<InputEvent> event) -> bool {
 }
 
 [[nodiscard]] inline
+auto is_mb_left_doubleclick(Ref<InputEvent> event) -> bool {
+	const Ref<InputEventMouseButton> mb = event;
+	return mb.is_valid() && mb->get_button_index() == GlobalConstants::BUTTON_LEFT && mb->is_doubleclick();
+}
+
+[[nodiscard]] inline
 auto is_mb_left_pressed(Ref<InputEvent> event) -> bool {
 	const Ref<InputEventMouseButton> mb = event;
 	return mb.is_valid() && mb->get_button_index() == GlobalConstants::BUTTON_LEFT && mb->is_pressed();
 }
 
-
+[[nodiscard]] inline
+auto is_mb_left_released(Ref<InputEvent> event) -> bool {
+	const Ref<InputEventMouseButton> mb = event;
+	return mb.is_valid() && mb->get_button_index() == GlobalConstants::BUTTON_LEFT && !mb->is_pressed();
+}
 
 } // gdn
