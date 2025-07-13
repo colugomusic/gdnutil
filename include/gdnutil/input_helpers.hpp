@@ -4,7 +4,28 @@
 #include <InputEventKey.hpp>
 #include <InputEventMouseButton.hpp>
 #include <InputEventMouseMotion.hpp>
+#include <InputEventPanGesture.hpp>
 #include <optional>
+
+namespace gdn::concepts {
+
+template <typename T, typename... Preds>
+concept predicates = requires (T value, Preds... preds) {
+	{ (preds(value) && ...) } -> std::same_as<bool>;
+};
+
+} // gdn::concepts
+
+namespace gdn::opt {
+
+using namespace godot;
+
+template <typename T, typename Fn> [[nodiscard]] inline
+auto transform(std::optional<Ref<T>> v, Fn fn) -> std::optional<decltype(fn(***v))> {
+	return v ? std::optional{fn(***v)} : std::nullopt;
+}
+
+} // gdn::opt
 
 namespace gdn {
 
@@ -33,64 +54,85 @@ namespace fn::mb {
 
 } // fn::mb
 
-template <typename... Preds>
-	requires (std::is_invocable_v<Preds, const InputEventKey&> && ...)
+template <typename EventType, typename... Preds>
+	requires concepts::predicates<EventType, Preds...>
 [[nodiscard]]
-auto get_key(Ref<InputEvent> event, Preds... preds) -> std::optional<Ref<InputEventKey>> {
-	const Ref<InputEventKey> key = event;
-	if (key.is_valid() && (preds(**key) && ...)) {
-		return key;
+auto get_event(Ref<InputEvent> base, Preds... preds) -> std::optional<Ref<EventType>> {
+	const Ref<EventType> derived = base;
+	if (derived.is_valid() && (preds(**derived) && ...)) {
+		return derived;
 	}
 	return std::nullopt;
 }
 
 template <typename... Preds>
-	requires (std::is_invocable_v<Preds, const InputEventKey&> && ...)
+	requires concepts::predicates<InputEventKey, Preds...>
 [[nodiscard]]
-auto is_key(Ref<InputEvent> event, Preds... preds) -> bool {
-	const Ref<InputEventKey> key = event;
-	return key.is_valid() && (preds(**key) && ...);
+auto get_key(Ref<InputEvent> event, Preds... preds) -> std::optional<Ref<InputEventKey>> {
+	return get_event<InputEventKey>(event, preds...);
 }
 
 template <typename... Preds>
-	requires (std::is_invocable_v<Preds, const InputEventMouseButton&> && ...)
+	requires concepts::predicates<InputEventMouseButton, Preds...>
 [[nodiscard]]
-auto is_mb(Ref<InputEvent> event, Preds... preds) -> bool {
-	const Ref<InputEventMouseButton> mb = event;
-	return mb.is_valid() && (preds(**mb) && ...);
+auto get_mb(Ref<InputEvent> event, Preds... preds) -> std::optional<Ref<InputEventMouseButton>> {
+	return get_event<InputEventMouseButton>(event, preds...);
 }
 
+template <typename... Preds>
+	requires concepts::predicates<InputEventMouseMotion, Preds...>
+[[nodiscard]]
+auto get_mm(Ref<InputEvent> event, Preds... preds) -> std::optional<Ref<InputEventMouseMotion>> {
+	return get_event<InputEventMouseMotion>(event, preds...);
+}
+
+template <typename... Preds>
+	requires concepts::predicates<InputEventPanGesture, Preds...>
+[[nodiscard]]
+auto get_pan_gesture(Ref<InputEvent> event, Preds... preds) -> std::optional<Ref<InputEventPanGesture>> {
+	return get_event<InputEventPanGesture>(event, preds...);
+}
+
+template <typename EventType, typename... Preds>
+	requires concepts::predicates<EventType, Preds...>
+[[nodiscard]]
+auto is_event(Ref<InputEvent> base, Preds... preds) -> bool {
+	const Ref<EventType> derived = base;
+	return derived.is_valid() && (preds(**derived) && ...);
+}
+
+template <typename... Preds>
+	requires concepts::predicates<InputEventKey, Preds...>
+[[nodiscard]]
+auto is_key(Ref<InputEvent> event, Preds... preds) -> bool {
+	return is_event<InputEventKey>(event, preds...);
+}
+
+template <typename... Preds>
+	requires concepts::predicates<InputEventMouseButton, Preds...>
+[[nodiscard]]
+auto is_mb(Ref<InputEvent> event, Preds... preds) -> bool {
+	return is_event<InputEventMouseButton>(event, preds...);
+}
+
+template <typename... Preds>
+	requires concepts::predicates<InputEventMouseMotion, Preds...>
 [[nodiscard]] inline
-auto is_mm(Ref<InputEvent> event) -> bool {
-	const Ref<InputEventMouseMotion> mm = event;
-	return mm.is_valid();
+auto is_mm(Ref<InputEvent> event, Preds... preds) -> bool {
+	return is_event<InputEventMouseMotion>(event, preds...);
 }
 
 [[nodiscard]] inline
 auto get_key_pressed(Ref<InputEvent> event, int64_t scancode) -> std::optional<bool> {
-	if (const auto key = get_key(event, fn::key::is_key(scancode), fn::key::is_pressed())) {
-		return key.value()->is_pressed();
-	}
-	return std::nullopt;
+	return opt::transform(get_key(event, fn::key::is_key(scancode)), fn::key::is_pressed());
 }
 
 [[nodiscard]] inline
 auto get_key_pressed_no_echo(Ref<InputEvent> event, int64_t scancode) -> std::optional<bool> {
-	if (const auto key = get_key(event, fn::key::is_key(scancode), fn::key::is_pressed(), fn::key::is_not_echo())) {
-		return key.value()->is_pressed();
-	}
-	return std::nullopt;
+	return opt::transform(get_key(event, fn::key::is_key(scancode), fn::key::is_not_echo()), fn::key::is_pressed());
 }
 
-[[nodiscard]] inline
-auto is_key(Ref<InputEvent> event, int64_t scancode, bool* pressed) -> bool {
-	if (const auto key = get_key(event, fn::key::is_key(scancode))) {
-		*pressed = key.value()->is_pressed();
-		return true;
-	}
-	return false;
-}
-
+[[nodiscard]] inline auto get_mb_any_pressed(Ref<InputEvent> event)                       { return get_mb(event, fn::mb::is_pressed()); }
 [[nodiscard]] inline auto is_key(Ref<InputEvent> event, int64_t scancode) -> bool         { return is_key(event, fn::key::is_key(scancode)); }
 [[nodiscard]] inline auto is_key_pressed(Ref<InputEvent> event, int64_t scancode) -> bool { return is_key(event, fn::key::is_key(scancode), fn::key::is_pressed()); }
 [[nodiscard]] inline auto is_mb_any_pressed(Ref<InputEvent> event) -> bool                { return is_mb(event, fn::mb::is_pressed()); }
