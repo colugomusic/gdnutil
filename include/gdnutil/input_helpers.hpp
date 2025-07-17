@@ -46,6 +46,7 @@ namespace fn::mb {
 [[nodiscard]] inline auto is_button(int64_t button) { return [button](const InputEventMouseButton& mb) { return mb.get_button_index() == button; }; }
 [[nodiscard]] inline auto is_doubleclick()          { return [](const InputEventMouseButton& mb) { return mb.is_doubleclick(); }; }
 [[nodiscard]] inline auto is_left()                 { return is_button(GlobalConstants::BUTTON_LEFT); }
+[[nodiscard]] inline auto is_middle()               { return is_button(GlobalConstants::BUTTON_MIDDLE); }
 [[nodiscard]] inline auto is_right()                { return is_button(GlobalConstants::BUTTON_RIGHT); }
 [[nodiscard]] inline auto is_pressed()              { return [](const InputEventMouseButton& mb) { return mb.is_pressed(); }; }
 [[nodiscard]] inline auto is_released()             { return std::not_fn(is_pressed()); }
@@ -133,12 +134,17 @@ auto get_key_pressed_no_echo(Ref<InputEvent> event, int64_t scancode) -> std::op
 }
 
 [[nodiscard]] inline auto get_mb_any_pressed(Ref<InputEvent> event)                       { return get_mb(event, fn::mb::is_pressed()); }
+[[nodiscard]] inline auto get_mb_left(Ref<InputEvent> event)                              { return get_mb(event, fn::mb::is_left()); }
+[[nodiscard]] inline auto get_mb_middle(Ref<InputEvent> event)                            { return get_mb(event, fn::mb::is_middle()); }
+[[nodiscard]] inline auto get_mb_right(Ref<InputEvent> event)                             { return get_mb(event, fn::mb::is_right()); }
 [[nodiscard]] inline auto is_key(Ref<InputEvent> event, int64_t scancode) -> bool         { return is_key(event, fn::key::is_key(scancode)); }
 [[nodiscard]] inline auto is_key_pressed(Ref<InputEvent> event, int64_t scancode) -> bool { return is_key(event, fn::key::is_key(scancode), fn::key::is_pressed()); }
 [[nodiscard]] inline auto is_mb_any_pressed(Ref<InputEvent> event) -> bool                { return is_mb(event, fn::mb::is_pressed()); }
 [[nodiscard]] inline auto is_mb_left_doubleclick(Ref<InputEvent> event) -> bool           { return is_mb(event, fn::mb::is_left(), fn::mb::is_doubleclick()); }
 [[nodiscard]] inline auto is_mb_left_pressed(Ref<InputEvent> event) -> bool               { return is_mb(event, fn::mb::is_left(), fn::mb::is_pressed()); }
 [[nodiscard]] inline auto is_mb_left_released(Ref<InputEvent> event) -> bool              { return is_mb(event, fn::mb::is_left(), fn::mb::is_released()); }
+[[nodiscard]] inline auto is_mb_middle_pressed(Ref<InputEvent> event) -> bool             { return is_mb(event, fn::mb::is_middle(), fn::mb::is_pressed()); }
+[[nodiscard]] inline auto is_mb_middle_released(Ref<InputEvent> event) -> bool            { return is_mb(event, fn::mb::is_middle(), fn::mb::is_released()); }
 [[nodiscard]] inline auto is_mb_right_pressed(Ref<InputEvent> event) -> bool              { return is_mb(event, fn::mb::is_right(), fn::mb::is_pressed()); }
 [[nodiscard]] inline auto is_mb_right_released(Ref<InputEvent> event) -> bool             { return is_mb(event, fn::mb::is_right(), fn::mb::is_released()); }
 [[nodiscard]] inline auto is_mb_wheel_up_pressed(Ref<InputEvent> event) -> bool           { return is_mb(event, fn::mb::is_wheel_up(), fn::mb::is_pressed()); }
