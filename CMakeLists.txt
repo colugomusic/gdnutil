@@ -33,6 +33,7 @@ target_sources(gdnutil INTERFACE
 		${CMAKE_CURRENT_LIST_DIR}/include/gdnutil/register.hpp
 		${CMAKE_CURRENT_LIST_DIR}/include/gdnutil/scene.hpp
 		${CMAKE_CURRENT_LIST_DIR}/include/gdnutil/scene_helper.hpp
+		${CMAKE_CURRENT_LIST_DIR}/include/gdnutil/string_helpers.hpp
 		${CMAKE_CURRENT_LIST_DIR}/include/gdnutil/strings.hpp
 		${CMAKE_CURRENT_LIST_DIR}/include/gdnutil/tree.hpp
 		${CMAKE_CURRENT_LIST_DIR}/include/gdnutil/vs_helpers.hpp
