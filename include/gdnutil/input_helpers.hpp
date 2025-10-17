@@ -124,6 +124,11 @@ auto is_mm(Ref<InputEvent> event, Preds... preds) -> bool {
 }
 
 [[nodiscard]] inline
+auto get_key_press(Ref<InputEvent> event) -> std::optional<Ref<InputEventKey>> {
+	return opt::transform(get_key(event, fn::key::is_pressed());
+}
+
+[[nodiscard]] inline
 auto get_key_pressed(Ref<InputEvent> event, int64_t scancode) -> std::optional<bool> {
 	return opt::transform(get_key(event, fn::key::is_key(scancode)), fn::key::is_pressed());
 }
