@@ -140,6 +140,11 @@ inline auto right(const godot::Control* c)
 	return c->get_global_position().x + c->get_size().width;
 }
 
+inline auto right_middle(const godot::Control* c)
+{
+	return c->get_global_position() + godot::Vector2 { c->get_size().width, c->get_size().height * 0.5f };
+}
+
 inline auto center(const godot::Control* c)
 {
 	return c->get_global_position() + (c->get_size() * 0.5f);
