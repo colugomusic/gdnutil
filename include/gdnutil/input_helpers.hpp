@@ -102,6 +102,13 @@ auto is_event(Ref<InputEvent> base, Preds... preds) -> bool {
 	return derived.is_valid() && (preds(**derived) && ...);
 }
 
+template <typename InputEventMouseButton, typename... Preds>
+	requires concepts::predicates<InputEventMouseButton, Preds...>
+[[nodiscard]]
+auto is_event(Ref<InputEventMouseButton> mb, Preds... preds) -> bool {
+	return mb.is_valid() && (preds(**mb) && ...);
+}
+
 template <typename... Preds>
 	requires concepts::predicates<InputEventKey, Preds...>
 [[nodiscard]]
@@ -144,6 +151,8 @@ auto get_key_pressed_no_echo(Ref<InputEvent> event, int64_t scancode) -> std::op
 [[nodiscard]] inline auto get_mb_right(Ref<InputEvent> event)                             { return get_mb(event, fn::mb::is_right()); }
 [[nodiscard]] inline auto is_key(Ref<InputEvent> event, int64_t scancode) -> bool         { return is_key(event, fn::key::is_key(scancode)); }
 [[nodiscard]] inline auto is_key_pressed(Ref<InputEvent> event, int64_t scancode) -> bool { return is_key(event, fn::key::is_key(scancode), fn::key::is_pressed()); }
+[[nodiscard]] inline auto is_any_pressed(Ref<InputEventMouseButton> event) -> bool        { return is_event(event, fn::mb::is_pressed()); }
+[[nodiscard]] inline auto is_any_released(Ref<InputEventMouseButton> event) -> bool       { return is_event(event, fn::mb::is_released()); }
 [[nodiscard]] inline auto is_mb_any_pressed(Ref<InputEvent> event) -> bool                { return is_mb(event, fn::mb::is_pressed()); }
 [[nodiscard]] inline auto is_mb_any_released(Ref<InputEvent> event) -> bool               { return is_mb(event, fn::mb::is_released()); }
 [[nodiscard]] inline auto is_mb_left_doubleclick(Ref<InputEvent> event) -> bool           { return is_mb(event, fn::mb::is_left(), fn::mb::is_doubleclick()); }
