@@ -145,6 +145,7 @@ auto get_key_pressed_no_echo(Ref<InputEvent> event, int64_t scancode) -> std::op
 [[nodiscard]] inline auto is_key(Ref<InputEvent> event, int64_t scancode) -> bool         { return is_key(event, fn::key::is_key(scancode)); }
 [[nodiscard]] inline auto is_key_pressed(Ref<InputEvent> event, int64_t scancode) -> bool { return is_key(event, fn::key::is_key(scancode), fn::key::is_pressed()); }
 [[nodiscard]] inline auto is_mb_any_pressed(Ref<InputEvent> event) -> bool                { return is_mb(event, fn::mb::is_pressed()); }
+[[nodiscard]] inline auto is_mb_any_released(Ref<InputEvent> event) -> bool               { return is_mb(event, fn::mb::is_released()); }
 [[nodiscard]] inline auto is_mb_left_doubleclick(Ref<InputEvent> event) -> bool           { return is_mb(event, fn::mb::is_left(), fn::mb::is_doubleclick()); }
 [[nodiscard]] inline auto is_mb_left_pressed(Ref<InputEvent> event) -> bool               { return is_mb(event, fn::mb::is_left(), fn::mb::is_pressed()); }
 [[nodiscard]] inline auto is_mb_left_released(Ref<InputEvent> event) -> bool              { return is_mb(event, fn::mb::is_left(), fn::mb::is_released()); }
