@@ -39,6 +39,7 @@ STRING(sort_children);
 STRING(text_changed);
 STRING(text_entered);
 STRING(timeout);
+STRING(tree_entered);
 STRING(tree_exiting);
 STRING(toggled);
 STRING(tween_all_completed);
